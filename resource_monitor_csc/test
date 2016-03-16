@@ -1,0 +1,8 @@
+#telnet  172.172.172.194  szgd@Cisco45.com <<EOF
+nc -T 172.172.172.194 23 >>out.log  <<EOF
+szgd@Cisco45.com
+
+sh mem
+
+quit
+EOF

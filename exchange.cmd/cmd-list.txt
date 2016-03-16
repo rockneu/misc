@@ -1,0 +1,31 @@
+
+1 get most detailed info about each email account
+Get-MailboxStatistics -Server sz-mbx-01 | Sort-Object -Property TotalItemSize | Format-list | more
+
+1.1 export the info above
+Get-MailboxStatistics -Server sz-mbx-01 | Sort-Object -Property TotalItemSize | Format-list | export-csv E:\email-detail.csv -encoding utf8
+
+
+2 get email account detailed info
+Get-MailboxStatistics -Server sz-mbx-01 | Sort-Object -Property TotalItemSize | Select-Object DisplayName,LastLoggedOnUserAccount, StorageLimitStatus,IsValid, ItemCount,TotalItemSize | more
+
+2.1 export email account detailed info as csv
+Get-MailboxStatistics -Server sz-mbx-01 | Sort-Object -Property TotalItemSize | Select-Object DisplayName,LastLoggedOnUserAccount, StorageLimitStatus,IsValid, ItemCount,TotalItemSize | export-csv E:\user-detail.csv -encoding utf8
+
+3 to clean the content of full email box
+search-mailbox -identity {username} -deletecontent
+
+
+4 get mailbox size info for a specific account
+Get-MailboxStatistics -identity gaofei | Sort-Object -Property TotalItemSize | Select-Object DisplayName,LastLoggedOnUserAccount, StorageLimitStatus,IsValid, ItemCount,TotalItemSize | export-csv E:\user-detail.csv -encoding utf8
+
+
+Get-MailboxStatistics -identity gaofei | Sort-Object -Property TotalItemSize | Select-Object DisplayName,LastLoggedOnUserAccount, StorageLimitStatus,IsValid, ItemCount,TotalItemSize
+
+
+5 to remove email cmd -- not work at our env
+5.1 method 1
+Get-mailbox -ResultSize unlimited | Search-Mailbox  -SearchQuery "Subject:'机电中心员工个人信息完善，直接替换黄色部分，输入文字部分，回复我即可。谢谢配合！'" -DeleteContent
+
+5.2 method 2
+Import-Csv -Path 'e:\mail.csv' | Foreach {Search-Mailbox -SearchQuery 'Subject:"机电中心员工个人信息完善，直接替换黄色部分，输入文字部分，回复我即可。谢谢配合！"' -DeleteContent -Force -Identity $_.Email}

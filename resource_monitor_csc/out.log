@@ -1,0 +1,618 @@
+
+
+User Access Verification
+
+Password: 
+KZZX-2F-6509-01>sh mem
+                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)
+Processor   45C1C150   910016176   106614148   803402028   104742536   765159724
+      I/O    8000000    67108864    21605604    45503260    45503260    45501532
+
+
+ --More--         
+KZZX-2F-6509-01>sh proc cpu
+CPU utilization for five seconds: 4%/1%; one minute: 3%; five minutes: 4%
+ PID Runtime(ms)   Invoked      uSecs   5Sec   1Min   5Min TTY Process 
+   1           0        48          0  0.00%  0.00%  0.00%   0 Chunk Manager    
+   2        1492   1749787          0  0.00%  0.00%  0.00%   0 Load Meter       
+   4        3292      6450        510  0.00%  0.01%  0.29%   1 Virtual Exec     
+   5           0         1          0  0.00%  0.00%  0.00%   0 PF Redun ICC Req 
+   6    26764412   1698640      15756  0.00%  0.24%  0.27%   0 Check heaps      
+   7         536      1821        294  0.00%  0.00%  0.00%   0 Pool Manager     
+   8           0         2          0  0.00%  0.00%  0.00%   0 Timers           
+   9    11221832  35380610        317  0.31%  0.15%  0.17%   0 ARP Input        
+  10           0         1          0  0.00%  0.00%  0.00%   0 AAA_SERVER_DEADT 
+  11           0         2          0  0.00%  0.00%  0.00%   0 AAA high-capacit 
+  12           0         1          0  0.00%  0.00%  0.00%   0 Policy Manager   
+  13          92       179        513  0.00%  0.00%  0.00%   0 Entity MIB API   
+  14          20       269         74  0.00%  0.00%  0.00%   0 EEM ED Syslog    
+  15           0         1          0  0.00%  0.00%  0.00%   0 IFS Agent Manage 
+  16          68    145818          0  0.00%  0.00%  0.00%   0 IPC Dynamic Cach 
+  17           4        77         51  0.00%  0.00%  0.00%   0 PF_Split Sync Pr 
+  18        2928   8746639          0  0.00%  0.00%  0.00%   0 IPC Periodic Tim 
+  19       31408   5416660          5  0.00%  0.00%  0.00%   0 IPC Managed Time 
+  20        2220   8746655          0  0.00%  0.00%  0.00%   0 IPC Deferred Por 
+  21    34968908 470901473         74  0.00%  0.16%  0.16%   0 IPC Seat Manager 
+  22           0         1          0  0.00%  0.00%  0.00%   0 IPC Session Serv 
+ --More--         
+KZZX-2F-6509-01>sh int g1/1
+GigabitEthernet1/1 is up, line protocol is up (connected)
+  Hardware is C6k 1000Mb 802.3, address is 503d.e58e.7040 (bia 503d.e58e.7040)
+  MTU 1500 bytes, BW 1000000 Kbit, DLY 10 usec, 
+     reliability 255/255, txload 7/255, rxload 11/255
+  Encapsulation ARPA, loopback not set
+  Keepalive set (10 sec)
+  Full-duplex, 1000Mb/s, media type is 10/100/1000BaseT
+  input flow-control is off, output flow-control is on 
+  Clock mode is auto
+  ARP type: ARPA, ARP Timeout 04:00:00
+  Last input never, output 00:00:49, output hang never
+  Last clearing of "show interface" counters never
+  Input queue: 0/2000/30/0 (size/max/drops/flushes); Total output drops: 0
+  Queueing strategy: fifo
+  Output queue: 0/40 (size/max)
+  5 minute input rate 46839000 bits/sec, 7810 packets/sec
+  5 minute output rate 29599000 bits/sec, 7413 packets/sec
+     3813854539 packets input, 2454142819202 bytes, 0 no buffer
+     Received 258 broadcasts (0 multicasts)
+     0 runts, 0 giants, 0 throttles 
+     3 input errors, 1 CRC, 0 frame, 27 overrun, 0 ignored
+     0 watchdog, 0 multicast, 0 pause input
+     0 input packets with dribble condition detected
+ --More--         
+KZZX-2F-6509-01>quit
+
+
+User Access Verification
+
+Password: 
+KZZX-2F-6509-02>sh mem
+                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)
+Processor   45C11DF0   910058000   107115516   802942484   104784360   763054720
+      I/O    8000000    67108864    21605604    45503260    45503260    45501532
+
+
+ --More--         
+KZZX-2F-6509-02>sh proc cpu
+CPU utilization for five seconds: 7%/2%; one minute: 4%; five minutes: 4%
+ PID Runtime(ms)   Invoked      uSecs   5Sec   1Min   5Min TTY Process 
+   1           0        46          0  0.00%  0.00%  0.00%   0 Chunk Manager    
+   2         884   2226483          0  0.00%  0.00%  0.00%   0 Load Meter       
+   4         160        45       3555  0.00%  0.00%  0.00%   1 Virtual Exec     
+   5           0         1          0  0.00%  0.00%  0.00%   0 PF Redun ICC Req 
+   6    34205240   2161002      15828  2.71%  0.38%  0.30%   0 Check heaps      
+   7         400      2318        172  0.00%  0.00%  0.00%   0 Pool Manager     
+   8           0         2          0  0.00%  0.00%  0.00%   0 Timers           
+   9    10316212  29834008        345  0.07%  0.15%  0.14%   0 ARP Input        
+  10           0         1          0  0.00%  0.00%  0.00%   0 AAA_SERVER_DEADT 
+  11           0         2          0  0.00%  0.00%  0.00%   0 AAA high-capacit 
+  12           0         1          0  0.00%  0.00%  0.00%   0 Policy Manager   
+  13         104       164        634  0.00%  0.00%  0.00%   0 Entity MIB API   
+  14          80      1797         44  0.00%  0.00%  0.00%   0 EEM ED Syslog    
+  15           0         1          0  0.00%  0.00%  0.00%   0 IFS Agent Manage 
+  16          24    185543          0  0.00%  0.00%  0.00%   0 IPC Dynamic Cach 
+  17          16        78        205  0.00%  0.00%  0.00%   0 PF_Split Sync Pr 
+  18        2620  11130239          0  0.00%  0.00%  0.00%   0 IPC Periodic Tim 
+  19       41320   6812725          6  0.00%  0.00%  0.00%   0 IPC Managed Time 
+  20        1944  11130235          0  0.00%  0.00%  0.00%   0 IPC Deferred Por 
+  21    42045844 599013379         70  0.47%  0.16%  0.16%   0 IPC Seat Manager 
+  22           0         1          0  0.00%  0.00%  0.00%   0 IPC Session Serv 
+ --More--         
+KZZX-2F-6509-02>sh int g1/1
+GigabitEthernet1/1 is up, line protocol is up (connected)
+  Hardware is C6k 1000Mb 802.3, address is e05f.b9af.e23f (bia e05f.b9af.e23f)
+  MTU 1500 bytes, BW 1000000 Kbit, DLY 10 usec, 
+     reliability 255/255, txload 1/255, rxload 1/255
+  Encapsulation ARPA, loopback not set
+  Keepalive set (10 sec)
+  Full-duplex, 1000Mb/s, media type is 10/100/1000BaseT
+  input flow-control is off, output flow-control is off
+  Clock mode is auto
+  ARP type: ARPA, ARP Timeout 04:00:00
+  Last input never, output 00:00:11, output hang never
+  Last clearing of "show interface" counters never
+  Input queue: 0/2000/12/0 (size/max/drops/flushes); Total output drops: 0
+  Queueing strategy: fifo
+  Output queue: 0/40 (size/max)
+  5 minute input rate 0 bits/sec, 0 packets/sec
+  5 minute output rate 0 bits/sec, 0 packets/sec
+     29489939510 packets input, 18329912453585 bytes, 0 no buffer
+     Received 3958 broadcasts (0 multicasts)
+     0 runts, 0 giants, 0 throttles 
+     3 input errors, 0 CRC, 0 frame, 9 overrun, 0 ignored
+     0 watchdog, 0 multicast, 0 pause input
+     0 input packets with dribble condition detected
+ --More--         
+KZZX-2F-6509-02>quit
+
+
+User Access Verification
+
+Password: 
+KZZX-2F-7609-01>sh mem
+                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)
+Processor   12DCAAF0   690181392   143198652   546982740   538244056   536087168
+      I/O   3C000000    67108864    39676044    27432820    27432820    27225020
+
+
+ --More--         
+KZZX-2F-7609-01>sh proc cpu
+CPU utilization for five seconds: 0%/0%; one minute: 0%; five minutes: 0%
+ PID Runtime(ms)   Invoked      uSecs   5Sec   1Min   5Min TTY Process 
+   1           0        16          0  0.00%  0.00%  0.00%   0 Chunk Manager    
+   2       15952   2226585          7  0.00%  0.00%  0.00%   0 Load Meter       
+   4           0       131          0  0.00%  0.00%  0.00%   0 Retransmission o 
+   5           0         4          0  0.00%  0.00%  0.00%   0 IPC ISSU Dispatc 
+   6           0         1          0  0.00%  0.00%  0.00%   0 PF Redun ICC Req 
+   7    15785652   1880225       8395  0.00%  0.09%  0.11%   0 Check heaps      
+   8           0      2319          0  0.00%  0.00%  0.00%   0 Pool Manager     
+   9           0         2          0  0.00%  0.00%  0.00%   0 Timers           
+  10        2136     15433        138  0.00%  0.00%  0.00%   0 ARP Input        
+  11         152  11610277          0  0.00%  0.00%  0.00%   0 ARP Background   
+  12           0         2          0  0.00%  0.00%  0.00%   0 ATM Idle Timer   
+  13           0         1          0  0.00%  0.00%  0.00%   0 ATM ASYNC PROC   
+  14           0         1          0  0.00%  0.00%  0.00%   0 AAA_SERVER_DEADT 
+  15           0         1          0  0.00%  0.00%  0.00%   0 Policy Manager   
+  16           8        47        170  0.00%  0.00%  0.00%   0 Entity MIB API   
+  17           0        82          0  0.00%  0.00%  0.00%   0 EEM ED Syslog    
+  18           0         1          0  0.00%  0.00%  0.00%   0 IFS Agent Manage 
+  19           0    185551          0  0.00%  0.00%  0.00%   0 IPC Dynamic Cach 
+  20          28   2226327          0  0.00%  0.00%  0.00%   0 IPC Service NonC 
+  21           8        97         82  0.00%  0.00%  0.00%   0 PF_Split Sync Pr 
+  22         156  11131575          0  0.00%  0.00%  0.00%   0 IPC Periodic Tim 
+ --More--         
+KZZX-2F-7609-01>sh int t1/2
+TenGigabitEthernet1/2 is up, line protocol is up (connected)
+  Hardware is C7600 10Gb 802.3, address is 44d3.ca62.4039 (bia 44d3.ca62.4039)
+  MTU 1500 bytes, BW 10000000 Kbit, DLY 10 usec, 
+     reliability 255/255, txload 1/255, rxload 1/255
+  Encapsulation ARPA, loopback not set
+  Keepalive set (10 sec)
+  Full-duplex, 10Gb/s
+  Transport mode LAN (10GBASE-R, 10.3125Gb/s)
+  input flow-control is off, output flow-control is off
+  ARP type: ARPA, ARP Timeout 04:00:00
+  Last input 00:00:20, output 00:00:28, output hang never
+  Last clearing of "show interface" counters never
+  Input queue: 0/2000/0/0 (size/max/drops/flushes); Total output drops: 0
+  Queueing strategy: fifo
+  Output queue: 0/40 (size/max)
+  5 minute input rate 1093000 bits/sec, 299 packets/sec
+  5 minute output rate 3375000 bits/sec, 730 packets/sec
+     8372690821 packets input, 6440058925528 bytes, 0 no buffer
+     Received 1138930875 broadcasts (1004115142 multicasts)
+     0 runts, 0 giants, 0 throttles 
+     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored
+     0 watchdog, 0 multicast, 0 pause input
+     0 input packets with dribble condition detected
+ --More--         
+KZZX-2F-7609-01>quit
+
+
+User Access Verification
+
+Password: 
+KZZX-2F-7609-02>sh mem
+                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)
+Processor   12DCAAF0   690181392   143285872   546895520   538031176   535849736
+      I/O   3C000000    67108864    39676044    27432820    27432820    27225020
+
+
+ --More--         
+KZZX-2F-7609-02>sh proc cpu
+CPU utilization for five seconds: 0%/0%; one minute: 0%; five minutes: 0%
+ PID Runtime(ms)   Invoked      uSecs   5Sec   1Min   5Min TTY Process 
+   1           0        15          0  0.00%  0.00%  0.00%   0 Chunk Manager    
+   2       17772   2226074          7  0.00%  0.00%  0.00%   0 Load Meter       
+   4           0       131          0  0.00%  0.00%  0.00%   0 Retransmission o 
+   5           0         4          0  0.00%  0.00%  0.00%   0 IPC ISSU Dispatc 
+   6           0         1          0  0.00%  0.00%  0.00%   0 PF Redun ICC Req 
+   7    15785244   1880007       8396  0.00%  0.19%  0.13%   0 Check heaps      
+   8           0      2318          0  0.00%  0.00%  0.00%   0 Pool Manager     
+   9           0         2          0  0.00%  0.00%  0.00%   0 Timers           
+  10         732     13001         56  0.00%  0.00%  0.00%   0 ARP Input        
+  11         132  11607131          0  0.00%  0.00%  0.00%   0 ARP Background   
+  12           0         2          0  0.00%  0.00%  0.00%   0 ATM Idle Timer   
+  13           0         1          0  0.00%  0.00%  0.00%   0 ATM ASYNC PROC   
+  14           0         1          0  0.00%  0.00%  0.00%   0 AAA_SERVER_DEADT 
+  15           0         1          0  0.00%  0.00%  0.00%   0 Policy Manager   
+  16           8        49        163  0.00%  0.00%  0.00%   0 Entity MIB API   
+  17           0       118          0  0.00%  0.00%  0.00%   0 EEM ED Syslog    
+  18           0         1          0  0.00%  0.00%  0.00%   0 IFS Agent Manage 
+  19           0    185508          0  0.00%  0.00%  0.00%   0 IPC Dynamic Cach 
+  20          36   2225812          0  0.00%  0.00%  0.00%   0 IPC Service NonC 
+  21          12        97        123  0.00%  0.00%  0.00%   0 PF_Split Sync Pr 
+  22          48  11129018          0  0.00%  0.00%  0.00%   0 IPC Periodic Tim 
+ --More--         
+KZZX-2F-7609-02>sh int t1/2
+TenGigabitEthernet1/2 is up, line protocol is up (connected)
+  Hardware is C7600 10Gb 802.3, address is 44d3.ca81.3379 (bia 44d3.ca81.3379)
+  MTU 1500 bytes, BW 10000000 Kbit, DLY 10 usec, 
+     reliability 255/255, txload 1/255, rxload 1/255
+  Encapsulation ARPA, loopback not set
+  Keepalive set (10 sec)
+  Full-duplex, 10Gb/s
+  Transport mode LAN (10GBASE-R, 10.3125Gb/s)
+  input flow-control is off, output flow-control is off
+  ARP type: ARPA, ARP Timeout 04:00:00
+  Last input 00:00:07, output 00:00:13, output hang never
+  Last clearing of "show interface" counters never
+  Input queue: 0/2000/0/0 (size/max/drops/flushes); Total output drops: 0
+  Queueing strategy: fifo
+  Output queue: 0/40 (size/max)
+  5 minute input rate 18181000 bits/sec, 3006 packets/sec
+  5 minute output rate 12337000 bits/sec, 2902 packets/sec
+     21779978317 packets input, 16195556359825 bytes, 0 no buffer
+     Received 817231868 broadcasts (724034009 multicasts)
+     0 runts, 0 giants, 0 throttles 
+     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored
+     0 watchdog, 0 multicast, 0 pause input
+     0 input packets with dribble condition detected
+ --More--         
+KZZX-2F-7609-02>quit
+
+
+User Access Verification
+
+Password: 
+KZZX-2F-SJ4507-01>sh mem
+                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)
+Processor   13A66BEC   475632656   188754000   286878656   275564912   275489444
+
+
+ --More--         
+KZZX-2F-SJ4507-01>sh proc cpu
+CPU utilization for five seconds: 14%/0%; one minute: 11%; five minutes: 11%
+ PID Runtime(ms)   Invoked      uSecs   5Sec   1Min   5Min TTY Process 
+   1           0        18          0  0.00%  0.00%  0.00%   0 Chunk Manager    
+   2         676   2210848          0  0.00%  0.00%  0.00%   0 Load Meter       
+   3      270244  17662638         15  0.07%  0.02%  0.00%   0 OSPF-1 Hello     
+   4           0         1          0  0.00%  0.00%  0.00%   0 Deferred Events  
+   5           0         1          0  0.00%  0.00%  0.00%   0 Retransmission o 
+   6           0         1          0  0.00%  0.00%  0.00%   0 IPC ISSU Receive 
+   7     7545960   1317501       5727  0.00%  0.05%  0.05%   0 Check heaps      
+   8           0         7          0  0.00%  0.00%  0.00%   0 Pool Manager     
+   9           0         2          0  0.00%  0.00%  0.00%   0 Timers           
+  10           0         2          0  0.00%  0.00%  0.00%   0 Serial Backgroun 
+  11           0         1          0  0.00%  0.00%  0.00%   0 Crash writer     
+  12           0         1          0  0.00%  0.00%  0.00%   0 ifIndex Receive  
+  13      862332   8732888         98  0.00%  0.00%  0.00%   0 ARP Input        
+  14           0         1          0  0.00%  0.00%  0.00%   0 CEF MIB API      
+  15           0         1          0  0.00%  0.00%  0.00%   0 AAA_SERVER_DEADT 
+  16           0         2          0  0.00%  0.00%  0.00%   0 AAA high-capacit 
+  17           0         1          0  0.00%  0.00%  0.00%   0 Policy Manager   
+  18           8         9        888  0.00%  0.00%  0.00%   0 Entity MIB API   
+  19           0       304          0  0.00%  0.00%  0.00%   0 EEM ED Syslog    
+  20           0         1          0  0.00%  0.00%  0.00%   0 IFS Agent Manage 
+  21           4    184240          0  0.00%  0.00%  0.00%   0 IPC Dynamic Cach 
+ --More--         
+KZZX-2F-SJ4507-01>sh int t3/2
+TenGigabitEthernet3/2 is up, line protocol is up (connected) 
+  Hardware is Ten Gigabit Ethernet Port, address is 503d.e516.20c1 (bia 503d.e516.20c1)
+  MTU 1500 bytes, BW 10000000 Kbit, DLY 10 usec, 
+     reliability 255/255, txload 1/255, rxload 1/255
+  Encapsulation ARPA, loopback not set
+  Keepalive set (10 sec)
+  Full-duplex, 10Gb/s, link type is auto, media type is 10GBase-SR
+  input flow-control is on, output flow-control is on 
+  ARP type: ARPA, ARP Timeout 04:00:00
+  Last input 00:00:00, output never, output hang never
+  Last clearing of "show interface" counters never
+  Input queue: 0/2000/0/0 (size/max/drops/flushes); Total output drops: 0
+  Queueing strategy: fifo
+  Output queue: 0/40 (size/max)
+  5 minute input rate 3455000 bits/sec, 739 packets/sec
+  5 minute output rate 1815000 bits/sec, 499 packets/sec
+     9990430474 packets input, 7663690101341 bytes, 0 no buffer
+     Received 1267750374 broadcasts (1115327796 multicasts)
+     0 runts, 0 giants, 0 throttles
+     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored
+     0 input packets with dribble condition detected
+     9085205300 packets output, 6552049637473 bytes, 0 underruns
+ --More--         
+KZZX-2F-SJ4507-01>quit
+
+
+User Access Verification
+
+Password: 
+KZZX-2F-SJ4507-02>sh mem
+                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)
+Processor   13A66BEC   475632656   188757656   286875000   275672756   275679084
+
+
+ --More--         
+KZZX-2F-SJ4507-02>sh proc cpu
+CPU utilization for five seconds: 14%/0%; one minute: 12%; five minutes: 12%
+ PID Runtime(ms)   Invoked      uSecs   5Sec   1Min   5Min TTY Process 
+   1           0        16          0  0.00%  0.00%  0.00%   0 Chunk Manager    
+   2         764   2211080          0  0.00%  0.00%  0.00%   0 Load Meter       
+   3           0         1          0  0.00%  0.00%  0.00%   0 CEF RP IPC Backg 
+   4           0         1          0  0.00%  0.00%  0.00%   0 Deferred Events  
+   5           0         1          0  0.00%  0.00%  0.00%   0 Retransmission o 
+   6           0         1          0  0.00%  0.00%  0.00%   0 IPC ISSU Receive 
+   7     7549232   1318126       5727  0.00%  0.05%  0.05%   0 Check heaps      
+   8           0         8          0  0.00%  0.00%  0.00%   0 Pool Manager     
+   9           0         2          0  0.00%  0.00%  0.00%   0 Timers           
+  10           0         2          0  0.00%  0.00%  0.00%   0 Serial Backgroun 
+  11           0         1          0  0.00%  0.00%  0.00%   0 Crash writer     
+  12           0         1          0  0.00%  0.00%  0.00%   0 ifIndex Receive  
+  13      558976   7752445         72  0.00%  0.00%  0.00%   0 ARP Input        
+  14           0         1          0  0.00%  0.00%  0.00%   0 CEF MIB API      
+  15           0         1          0  0.00%  0.00%  0.00%   0 AAA_SERVER_DEADT 
+  16           0         2          0  0.00%  0.00%  0.00%   0 AAA high-capacit 
+  17           0         1          0  0.00%  0.00%  0.00%   0 Policy Manager   
+  18           4        10        400  0.00%  0.00%  0.00%   0 Entity MIB API   
+  19           4       491          8  0.00%  0.00%  0.00%   0 EEM ED Syslog    
+  20           0         1          0  0.00%  0.00%  0.00%   0 IFS Agent Manage 
+  21          12    184259          0  0.00%  0.00%  0.00%   0 IPC Dynamic Cach 
+ --More--         
+KZZX-2F-SJ4507-02>sh int t3/2
+TenGigabitEthernet3/2 is up, line protocol is up (connected) 
+  Hardware is Ten Gigabit Ethernet Port, address is 503d.e50e.4e41 (bia 503d.e50e.4e41)
+  MTU 1500 bytes, BW 10000000 Kbit, DLY 10 usec, 
+     reliability 255/255, txload 1/255, rxload 1/255
+  Encapsulation ARPA, loopback not set
+  Keepalive set (10 sec)
+  Full-duplex, 10Gb/s, link type is auto, media type is 10GBase-SR
+  input flow-control is on, output flow-control is on 
+  ARP type: ARPA, ARP Timeout 04:00:00
+  Last input 00:00:00, output never, output hang never
+  Last clearing of "show interface" counters never
+  Input queue: 0/2000/0/0 (size/max/drops/flushes); Total output drops: 0
+  Queueing strategy: fifo
+  Output queue: 0/40 (size/max)
+  5 minute input rate 5013000 bits/sec, 1160 packets/sec
+  5 minute output rate 6994000 bits/sec, 1111 packets/sec
+     11602970323 packets input, 6814631513388 bytes, 0 no buffer
+     Received 2271055836 broadcasts (1448167176 multicasts)
+     0 runts, 0 giants, 0 throttles
+     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored
+     0 input packets with dribble condition detected
+     10103815254 packets output, 8617488351682 bytes, 0 underruns
+ --More--         
+KZZX-2F-SJ4507-02>quit
+
+
+User Access Verification
+
+Password: 
+KZZX-2F-CZ4507-SW1>sh mem
+                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)
+Processor   13A66BEC   475632656   191175348   284457308   273021800   272912460
+
+
+ --More--         
+KZZX-2F-CZ4507-SW1>sh proc cpu
+CPU utilization for five seconds: 61%/0%; one minute: 62%; five minutes: 63%
+ PID Runtime(ms)   Invoked      uSecs   5Sec   1Min   5Min TTY Process 
+   1       65796  18713386          3  0.00%  0.00%  0.00%   0 Chunk Manager    
+   2       35124   1869531         18  0.00%  0.00%  0.00%   0 Load Meter       
+   3    12233768  42172884        290  0.23%  0.23%  0.24%   0 OSPF-1 Hello     
+   4           0         1          0  0.00%  0.00%  0.00%   0 Deferred Events  
+   5           0         1          0  0.00%  0.00%  0.00%   0 Retransmission o 
+   6           0         1          0  0.00%  0.00%  0.00%   0 IPC ISSU Receive 
+   7     7753900   1263537       6136  0.00%  0.09%  0.06%   0 Check heaps      
+   8           0         6          0  0.00%  0.00%  0.00%   0 Pool Manager     
+   9           0         2          0  0.00%  0.00%  0.00%   0 Timers           
+  10           0         2          0  0.00%  0.00%  0.00%   0 Serial Backgroun 
+  11           0         1          0  0.00%  0.00%  0.00%   0 Crash writer     
+  12           0         1          0  0.00%  0.00%  0.00%   0 ifIndex Receive  
+  13     2178388  13467645        161  0.00%  0.01%  0.00%   0 ARP Input        
+  14           0         1          0  0.00%  0.00%  0.00%   0 CEF MIB API      
+  15           0         1          0  0.00%  0.00%  0.00%   0 AAA_SERVER_DEADT 
+  16           0         2          0  0.00%  0.00%  0.00%   0 AAA high-capacit 
+  17           0         1          0  0.00%  0.00%  0.00%   0 Policy Manager   
+  18           8        42        190  0.00%  0.00%  0.00%   0 Entity MIB API   
+  19           8       269         29  0.00%  0.00%  0.00%   0 EEM ED Syslog    
+  20           0         1          0  0.00%  0.00%  0.00%   0 IFS Agent Manage 
+  21         312    155930          2  0.00%  0.00%  0.00%   0 IPC Dynamic Cach 
+ --More--         
+KZZX-2F-CZ4507-SW1>sh int t3/2
+TenGigabitEthernet3/2 is up, line protocol is up (connected) 
+  Hardware is Ten Gigabit Ethernet Port, address is 503d.e50e.4e81 (bia 503d.e50e.4e81)
+  MTU 1500 bytes, BW 10000000 Kbit, DLY 10 usec, 
+     reliability 255/255, txload 1/255, rxload 1/255
+  Encapsulation ARPA, loopback not set
+  Keepalive set (10 sec)
+  Full-duplex, 10Gb/s, link type is auto, media type is 10GBase-SR
+  input flow-control is on, output flow-control is on 
+  ARP type: ARPA, ARP Timeout 04:00:00
+  Last input 00:00:00, output never, output hang never
+  Last clearing of "show interface" counters never
+  Input queue: 0/2000/0/0 (size/max/drops/flushes); Total output drops: 0
+  Queueing strategy: fifo
+  Output queue: 0/40 (size/max)
+  5 minute input rate 197000 bits/sec, 307 packets/sec
+  5 minute output rate 1000 bits/sec, 1 packets/sec
+     2480244363 packets input, 531761769829 bytes, 0 no buffer
+     Received 1968605354 broadcasts (1266265304 multicasts)
+     0 runts, 0 giants, 0 throttles
+     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored
+     0 input packets with dribble condition detected
+     233449472 packets output, 172749748582 bytes, 0 underruns
+ --More--         
+KZZX-2F-CZ4507-SW1>quit
+
+
+User Access Verification
+
+Password: 
+KZZX-2F-CZ4507-SW2>sh mem
+                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)
+Processor   1443601C   465346528   221697908   243648620   241820868   241227916
+
+
+ --More--         
+KZZX-2F-CZ4507-SW2>sh proc cpu
+CPU utilization for five seconds: 19%/0%; one minute: 18%; five minutes: 18%
+ PID Runtime(ms)   Invoked      uSecs   5Sec   1Min   5Min TTY Process 
+   1       44321  22269329          1  0.00%  0.00%  0.00%   0 Chunk Manager    
+   2         380   2226899          0  0.00%  0.00%  0.00%   0 Load Meter       
+   3      979474  63122662         15  0.07%  0.06%  0.07%   0 OSPF-1 Hello     
+   4           0         1          0  0.00%  0.00%  0.00%   0 Deferred Events  
+   5           0         1          0  0.00%  0.00%  0.00%   0 Retransmission o 
+   6           0         1          0  0.00%  0.00%  0.00%   0 IPC ISSU Receive 
+   7     9188324   1504696       6106  0.00%  0.06%  0.05%   0 Check heaps      
+   8           0         7          0  0.00%  0.00%  0.00%   0 Pool Manager     
+   9           0         2          0  0.00%  0.00%  0.00%   0 Timers           
+  10           0         2          0  0.00%  0.00%  0.00%   0 Serial Backgroun 
+  11           0         1          0  0.00%  0.00%  0.00%   0 Crash writer     
+  12          16        16       1000  0.00%  0.00%  0.00%   0 RF Slave Main Th 
+  13           0         1          0  0.00%  0.00%  0.00%   0 ifIndex Receive  
+  14      735703   8391500         87  0.00%  0.00%  0.00%   0 ARP Input        
+  15           0         1          0  0.00%  0.00%  0.00%   0 CEF MIB API      
+  16           0         1          0  0.00%  0.00%  0.00%   0 AAA_SERVER_DEADT 
+  17           0         2          0  0.00%  0.00%  0.00%   0 AAA high-capacit 
+  18           0         1          0  0.00%  0.00%  0.00%   0 Policy Manager   
+  19           4        39        102  0.00%  0.00%  0.00%   0 Entity MIB API   
+  20           0         1          0  0.00%  0.00%  0.00%   0 IFS Agent Manage 
+  21        1653   2226147          0  0.00%  0.00%  0.00%   0 IPC Event Notifi 
+ --More--         
+KZZX-2F-CZ4507-SW2>sh int t3/2
+TenGigabitEthernet3/2 is up, line protocol is up (connected) 
+  Hardware is Ten Gigabit Ethernet Port, address is 503d.e516.2281 (bia 503d.e516.2281)
+  MTU 1500 bytes, BW 10000000 Kbit, DLY 10 usec, 
+     reliability 255/255, txload 1/255, rxload 1/255
+  Encapsulation ARPA, loopback not set
+  Keepalive set (10 sec)
+  Full-duplex, 10Gb/s, link type is auto, media type is 10GBase-SR
+  input flow-control is on, output flow-control is on 
+  ARP type: ARPA, ARP Timeout 04:00:00
+  Last input 00:00:00, output never, output hang never
+  Last clearing of "show interface" counters never
+  Input queue: 0/2000/0/0 (size/max/drops/flushes); Total output drops: 0
+  Queueing strategy: fifo
+  Output queue: 0/40 (size/max)
+  5 minute input rate 1855000 bits/sec, 508 packets/sec
+  5 minute output rate 973000 bits/sec, 160 packets/sec
+     3497662953 packets input, 1262176705087 bytes, 0 no buffer
+     Received 2044313294 broadcasts (1238274108 multicasts)
+     0 runts, 0 giants, 0 throttles
+     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored
+     0 input packets with dribble condition detected
+     963284801 packets output, 475907084167 bytes, 0 underruns
+ --More--         
+KZZX-2F-CZ4507-SW2>quit
+
+
+User Access Verification
+
+Password: 
+CLD-2F-4506-S1>sh mem
+                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)
+Processor   13A01F84   476045432   218812016   257233416   247830872   247576708
+
+
+ --More--         
+CLD-2F-4506-S1>sh proc cpu
+CPU utilization for five seconds: 10%/0%; one minute: 12%; five minutes: 12%
+ PID Runtime(ms)   Invoked      uSecs   5Sec   1Min   5Min TTY Process 
+   1       42576  22827901          1  0.00%  0.00%  0.00%   0 Chunk Manager    
+   2         272   2282758          0  0.00%  0.00%  0.00%   0 Load Meter       
+   3      985428  44399333         22  0.00%  0.02%  0.02%   0 OSPF-1 Hello     
+   4           0         1          0  0.00%  0.00%  0.00%   0 Deferred Events  
+   5           0         1          0  0.00%  0.00%  0.00%   0 Retransmission o 
+   6           0         1          0  0.00%  0.00%  0.00%   0 IPC ISSU Receive 
+   7     8664932   1542443       5617  0.00%  0.06%  0.05%   0 Check heaps      
+   8          32       590         54  0.00%  0.00%  0.00%   0 Pool Manager     
+   9           0         2          0  0.00%  0.00%  0.00%   0 Timers           
+  10          96         3      32000  0.00%  0.00%  0.00%   0 PrstVbl          
+  11           0         2          0  0.00%  0.00%  0.00%   0 Serial Backgroun 
+  12           0         1          0  0.00%  0.00%  0.00%   0 Crash writer     
+  13           0         1          0  0.00%  0.00%  0.00%   0 ifIndex Receive  
+  14         264     19840         13  0.00%  0.00%  0.00%   0 EEM ED Syslog    
+  15    21587104 147521742        146  0.07%  0.40%  0.39%   0 ARP Input        
+  16           0         1          0  0.00%  0.00%  0.00%   0 CEF MIB API      
+  17           0         1          0  0.00%  0.00%  0.00%   0 AAA_SERVER_DEADT 
+  18           0         2          0  0.00%  0.00%  0.00%   0 AAA high-capacit 
+  19           0         1          0  0.00%  0.00%  0.00%   0 Policy Manager   
+  20          12        33        363  0.00%  0.00%  0.00%   0 Entity MIB API   
+  21           0         1          0  0.00%  0.00%  0.00%   0 IFS Agent Manage 
+ --More--         
+CLD-2F-4506-S1>sh int t3/2
+TenGigabitEthernet3/2 is up, line protocol is up (connected) 
+  Hardware is Ten Gigabit Ethernet Port, address is c89c.1d93.2441 (bia c89c.1d93.2441)
+  MTU 1500 bytes, BW 10000000 Kbit, DLY 10 usec, 
+     reliability 255/255, txload 1/255, rxload 1/255
+  Encapsulation ARPA, loopback not set
+  Keepalive set (10 sec)
+  Full-duplex, 10Gb/s, link type is auto, media type is 10GBase-ER
+  input flow-control is on, output flow-control is on 
+  ARP type: ARPA, ARP Timeout 04:00:00
+  Last input 00:00:00, output never, output hang never
+  Last clearing of "show interface" counters never
+  Input queue: 0/2000/0/0 (size/max/drops/flushes); Total output drops: 0
+  Queueing strategy: fifo
+  Output queue: 0/40 (size/max)
+  5 minute input rate 1078000 bits/sec, 303 packets/sec
+  5 minute output rate 9669000 bits/sec, 2649 packets/sec
+     8353149024 packets input, 6384251786638 bytes, 0 no buffer
+     Received 1193650951 broadcasts (1050385095 multicasts)
+     0 runts, 0 giants, 0 throttles
+     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored
+     0 input packets with dribble condition detected
+     20971387572 packets output, 15684040414666 bytes, 0 underruns
+ --More--         
+CLD-2F-4506-S1>quit
+
+
+User Access Verification
+
+Password: 
+CLD-2F-4506-S2>sh mem
+                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)
+Processor   13A01F84   476045432   217536204   258509228   248087580   248044564
+
+
+ --More--         
+CLD-2F-4506-S2>sh proc cpu
+CPU utilization for five seconds: 11%/0%; one minute: 13%; five minutes: 13%
+ PID Runtime(ms)   Invoked      uSecs   5Sec   1Min   5Min TTY Process 
+   1       44564  22828547          1  0.00%  0.00%  0.00%   0 Chunk Manager    
+   2         168   2282829          0  0.00%  0.00%  0.00%   0 Load Meter       
+   3      955220  44443259         21  0.00%  0.02%  0.01%   0 OSPF-1 Hello     
+   4           0         1          0  0.00%  0.00%  0.00%   0 Deferred Events  
+   5           0         1          0  0.00%  0.00%  0.00%   0 Retransmission o 
+   6           0         1          0  0.00%  0.00%  0.00%   0 IPC ISSU Receive 
+   7     8599572   1542748       5574  0.00%  0.05%  0.05%   0 Check heaps      
+   8           0       154          0  0.00%  0.00%  0.00%   0 Pool Manager     
+   9           0         2          0  0.00%  0.00%  0.00%   0 Timers           
+  10          84         3      28000  0.00%  0.00%  0.00%   0 PrstVbl          
+  11           0         2          0  0.00%  0.00%  0.00%   0 Serial Backgroun 
+  12           0         1          0  0.00%  0.00%  0.00%   0 Crash writer     
+  13           0         1          0  0.00%  0.00%  0.00%   0 ifIndex Receive  
+  14         156     10963         14  0.00%  0.00%  0.00%   0 EEM ED Syslog    
+  15    24422788 209183869        116  0.55%  0.47%  0.43%   0 ARP Input        
+  16           0         1          0  0.00%  0.00%  0.00%   0 CEF MIB API      
+  17           0         1          0  0.00%  0.00%  0.00%   0 AAA_SERVER_DEADT 
+  18           0         2          0  0.00%  0.00%  0.00%   0 AAA high-capacit 
+  19           0         1          0  0.00%  0.00%  0.00%   0 Policy Manager   
+  20           4        37        108  0.00%  0.00%  0.00%   0 Entity MIB API   
+  21           0         1          0  0.00%  0.00%  0.00%   0 IFS Agent Manage 
+ --More--         
+CLD-2F-4506-S2>sh int t3/2
+TenGigabitEthernet3/2 is up, line protocol is up (connected) 
+  Hardware is Ten Gigabit Ethernet Port, address is c89c.1d93.2301 (bia c89c.1d93.2301)
+  MTU 1500 bytes, BW 10000000 Kbit, DLY 10 usec, 
+     reliability 255/255, txload 1/255, rxload 1/255
+  Encapsulation ARPA, loopback not set
+  Keepalive set (10 sec)
+  Full-duplex, 10Gb/s, link type is auto, media type is 10GBase-ER
+  input flow-control is on, output flow-control is on 
+  ARP type: ARPA, ARP Timeout 04:00:00
+  Last input 00:00:01, output never, output hang never
+  Last clearing of "show interface" counters never
+  Input queue: 0/2000/0/0 (size/max/drops/flushes); Total output drops: 0
+  Queueing strategy: fifo
+  Output queue: 0/40 (size/max)
+  5 minute input rate 17913000 bits/sec, 3000 packets/sec
+  5 minute output rate 5072000 bits/sec, 869 packets/sec
+     22068954158 packets input, 16159576009337 bytes, 0 no buffer
+     Received 1179765495 broadcasts (1055650273 multicasts)
+     0 runts, 0 giants, 0 throttles
+     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored
+     0 input packets with dribble condition detected
+     9492201231 packets output, 6197706970952 bytes, 0 underruns
+ --More--         
+CLD-2F-4506-S2>quit
