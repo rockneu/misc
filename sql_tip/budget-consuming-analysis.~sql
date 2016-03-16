@@ -1,0 +1,33 @@
+SELECT 
+--      sum(cidv.PO_QUANTITY * unit_price), --89390.90547
+      SUM(cidv.DEMAND_QUANTITY * UNIT_PRICE) --88984.66607  , 90584.66607
+ FROM cux_inv_details2_v cidv
+      
+ WHERE (ORGANIZATION_ID = 102)
+ 
+       /*
+         case po_num exist
+              
+         case po_num not exist
+         
+       */
+       
+       
+       --and pl.po_line_id=cidv.po_line_id
+       
+       /*AND pl.po_header_id=cidv.po_header_id
+       AND PL.PO_HEADER_ID=PH.PO_HEADER_ID
+       and pl.org_id=82
+       and pl.org_id=ph.org_id*/
+       --and cidv.po_line_id=pl.po_line_id
+       
+   and cidv.DEMAND_CODE in ('SQ201301090017','SQ201306040008','SQ201301090032')
+--     and cidv.demand_code like 'SQ2013%'
+     
+   and cidv.item_num like '24002%'
+   and cidv.demand_center_name ='供电机电中心'
+   and po_status_desc in ('批准')
+--   order by po_status_desc, last_update_date asc;
+--     order by last_update_date;
+-- ORDER BY DEMAND_CODE, DEMAND_LINE_NUM;       
+

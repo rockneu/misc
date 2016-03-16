@@ -1,0 +1,4 @@
+
+
+SELECT * FROM  ERP_GET_BIN_ITEM_CNT
+;

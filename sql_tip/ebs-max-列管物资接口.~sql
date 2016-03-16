@@ -1,0 +1,4 @@
+
+
+SELECT * FROM MAXORA.mxmanagitem_iface
+ WHERE ISSUENUM IN ('CK201411280033');

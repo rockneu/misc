@@ -1,0 +1,22 @@
+
+--更新入库单号
+update rcv_transactions sr
+  set sr.rma_reference = (select sa.seq_number from CUX_INV_NUMBER_SEQ_ALL sa where sa.organization_id = sr.organization_id
+                         where sa.transaction_type = 'DELIVER')
+where exists (select 1 from po_headers_all pa
+              where pa.po_header_id = sr.po_header_id
+                and pa.segment1 = '40200000015'
+                )
+  and exists(select 1 from po_releases_all pr
+             where pr.po_release_id = sr.po_release_id
+             and   pr.po_header_id = sr.po_header_id
+             and   pr.release_num = '1' )
+   and sr.rma_reference is null ;
+ ---更新序列表
+ update CUX_INV_NUMBER_SEQ_ALL cs
+    set cs.seq_number +1
+  where cs.organization_id = 98  -- 98 L2, 102 L1
+    and cs.transaction_type = 'DELIVER' ;
+    
+--    SELECT * FROM CUX_INV_NUMBER_SEQ_ALL
+select * from org_organization_definitions where organization_id=98;

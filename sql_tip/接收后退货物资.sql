@@ -1,0 +1,35 @@
+
+SELECT 
+       rt.transaction_date 退货日期,                         --退货日期
+       DECODE (rsl.to_organization_id,102,'一号线',969,'二号线') line_type,  --线别
+       RSH.RECEIPT_NUM,                  --接收号
+       rt.rma_reference,                 --退货号
+       MSIB.SEGMENT1,                    --物资编码
+       MSIB.DESCRIPTION,                 --物资描述
+       rcv.quantity receive_quantity,    --接收数量
+       nvl(deliver.quantity,0) deliver_quantity,    --入库数量
+       rt.quantity return_quantity,      --退货数量
+       rt.po_unit_price,                 --单价
+       rt.po_unit_price * rt.quantity rcv_amount   --金额
+
+  FROM RCV_SHIPMENT_HEADERS RSH,
+       RCV_SHIPMENT_LINES RSL,
+       MTL_SYSTEM_ITEMS_B MSIB,
+       RCV_TRANSACTIONS rcv,
+       (SELECT shipment_line_id,
+           SUM(quantity) quantity 
+          FROM RCV_TRANSACTIONS
+         WHERE transaction_type = 'DELIVER'
+         GROUP BY shipment_line_id) deliver,
+       RCV_TRANSACTIONS rt
+ WHERE RSH.SHIPMENT_HEADER_ID = RSL.SHIPMENT_HEADER_ID
+   AND rsl.ITEM_ID = MSIB.INVENTORY_ITEM_ID
+   AND MSIB.ORGANIZATION_ID = '95'
+   AND rsl.shipment_line_id = rcv.shipment_line_id
+   AND rcv.transaction_type = 'RECEIVE'
+   AND rsl.shipment_line_id = deliver.shipment_line_id(+)
+   AND rsl.shipment_line_id = rt.shipment_line_id
+   AND rt.transaction_type = 'RETURN TO VENDOR'
+   AND rsl.to_organization_id IN (102,969)
+   AND nvl(rcv.quantity,0)  >  nvl(deliver.quantity,0)
+order by rt.transaction_date desc;

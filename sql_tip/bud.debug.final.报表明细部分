@@ -1,0 +1,115 @@
+
+-- 实扣对应预算消耗报表明细部分
+
+SELECT 
+        h.demand_code,
+       l.line_num,
+       msib.segment1,
+       l.req_quantity,
+--       l.list_price,
+       poh.segment1,
+       pra.release_num,
+       pol.unit_price
+   /*h.demand_code dc,l.list_price d_list_price,l.req_quantity,
+              poh.segment1 demand_code,msib.segment1,msib.description,
+              pol.market_price \*l.*\list_price,SUM(nvl(pll.quantity\*l.req_quantity*\, 0)) qty,
+              SUM(nvl(pll.quantity\*l.req_quantity*\, 0) * nvl(pol.market_price\*l.list_price*\, 0)) amt,
+         \*Mcb.Segment1 || '.' || Mcb.Segment2*\l.attribute1 Item_Cat2,
+      \* Substr(Mcb.Description, 1, Instr(Mcb.Description, '-', 1, 2) - 1) *\null Item_Cat2_Desc,
+       h.Organization_Id,
+       h.Center_Id,
+       h.Bud_Year,
+       h.demand_type      */
+       
+  FROM cux_inv_demand_lines     l
+       ,mtl_system_items_b msib
+      ,cux_inv_demand_headers   h
+      ,cux_inv_plan_lines       pl
+      ,po_requisition_lines_all prl
+      ,po_req_distributions_all prd
+      ,po_distributions_all     pod
+      ,po_line_locations_all pll
+      ,po_lines_all pol
+      ,po_headers_all poh
+      ,po_releases_all pra
+ WHERE l.header_id = h.header_id
+--   AND l.attribute1 = p_item_cat --'28.007'--大类.中类
+   AND h.bud_year = '2014' --'2013'--
+--   AND h.center_id =  p_center_id--70585-- 中心部门
+   --AND h.demand_type = p_bud_type--'生产性'--
+   AND h.organization_id = 102--102-- 
+   AND msib.organization_id = l.organization_id
+   AND msib.inventory_item_id = l.inventory_item_id
+   AND decode(h.demand_type,'劳保物资','生产性','固定资产','生产性',h.demand_type)='生产性'
+   -- AND h.status = 'APPROVED'
+   -- AND l.attribute12 = 'PO'
+   AND l.line_id = pl.demand_line_id
+   AND pl.requisition_line_id = prl.requisition_line_id --计划行到申请行
+   AND prl.requisition_line_id = prd.requisition_line_id --申请行到申请分配行
+   AND prd.distribution_id = pod.req_distribution_id-- 申请分配行到采购分配行
+   AND pod.line_location_id = pll.line_location_id-- 申请分配行到采购分配发运行
+   AND pod.po_line_id = pol.po_line_id --采购分配行到采购订单行
+   AND pol.po_header_id = poh.po_header_id
+   AND pod.po_release_id = pra.po_release_id(+)
+   --AND poh.AUTHORIZATION_STATUS = 'APPROVED'
+   AND nvl(pra.authorization_status,nvl(poh.authorization_status,'-1')) = 'APPROVED'
+  /* GROUP BY  h.demand_code,poh.segment1,msib.segment1,msib.description,
+           pol.market_price\*l.list_price*\,l.attribute1\*Mcb.Segment1 || '.' || Mcb.Segment2*\,
+       --    Substr(Mcb.Description, 1, Instr(Mcb.Description, '-', 1, 2) - 1),
+           h.Organization_Id,
+           h.Center_Id,
+           h.Bud_Year,
+           h.demand_type,
+           l.list_price,l.req_quantity*/
+  ; 
+           
+          cux_item_bud_summary_pkg ；
+          cux_inv_bud_pkg
+           
+-- 实扣 对应实扣汇总拆分的明细部分
+/* SELECT --SUM(amt) INTO ln_reserved_amount
+    FROM (*/
+    SELECT 
+      --ROUND((nvl(l.req_quantity, 0) * nvl(pol.market_price/*unit_price*/, 0)),2)amt
+      h.demand_code,
+       l.line_num,
+       msib.segment1,
+       l.req_quantity,
+--       l.list_price,
+       poh.segment1,
+       pra.release_num,
+      pol.unit_price
+      
+  FROM cux_inv_demand_lines     l
+       ,mtl_system_items_b msib
+      ,cux_inv_demand_headers   h
+      ,cux_inv_plan_lines       pl
+      ,po_requisition_lines_all prl
+      ,po_req_distributions_all prd
+      ,po_distributions_all     pod
+      ,po_line_locations_all pll
+      ,po_lines_all pol
+      ,po_headers_all poh
+      ,po_releases_all pra
+ WHERE l.header_id = h.header_id
+--   AND l.attribute1 = p_item_cat --'28.007'--大类.中类
+   AND h.bud_year = '2014' --'2013'--
+--   AND h.center_id =  p_center_id--70585-- 中心部门
+   AND decode(h.demand_type,'劳保物资','生产性','固定资产','生产性',h.demand_type) = '生产性'--
+   AND h.organization_id = 102 --102-- 
+   AND msib.organization_id = l.organization_id
+   AND msib.inventory_item_id = l.inventory_item_id
+   --AND decode(nvl(msib.item_type,msib.item_type),'WZ','生产性','非生产性')=p_bud_type
+   -- AND h.status = 'APPROVED'
+   -- AND l.attribute12 = 'PO'
+   AND l.line_id = pl.demand_line_id
+   AND pl.requisition_line_id = prl.requisition_line_id --计划行到申请行
+   AND prl.requisition_line_id = prd.requisition_line_id --申请行到申请分配行
+   AND prd.distribution_id = pod.req_distribution_id-- 申请分配行到采购分配行
+   AND pod.line_location_id = pll.line_location_id-- 申请分配行到采购分配发运行
+   AND pod.po_line_id = pol.po_line_id --采购分配行到采购订单行
+   AND pol.po_header_id = poh.po_header_id
+   AND pod.po_release_id = pra.po_release_id(+)
+   --AND poh.AUTHORIZATION_STATUS = 'APPROVED'
+   AND nvl(pra.authorization_status,nvl(poh.authorization_status,'-1')) = 'APPROVED'           
+;           

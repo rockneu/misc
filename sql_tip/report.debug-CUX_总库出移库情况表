@@ -1,0 +1,82 @@
+SELECT /*Cux_Inv_Total_Count_Pkg.Get_Lot_Count(Cux_Inv_Total_Count_Pkg.Get_Dept_Center(s.Attribute2,
+                                                                                     s.Organization_Id),
+                                             s.Organization_Id,
+                                             sysdate,
+                                             sysdate) Trans_Count,*/
+       /*-sum(s.Primary_Quantity) Trans_Qty,
+       -round(SUM(s.Primary_Quantity * s.Actual_Cost), 2) Trans_Amount,*/
+       /*-sum(Decode(Msi.Attribute2, '备品备件', s.Primary_Quantity, 0)) Bpbj_Qty,
+       -round(SUM(Decode(Msi.Attribute2,
+                         '备品备件',
+                         s.Primary_Quantity * s.Actual_Cost,
+                         0)),
+              2) Bpbj_Amount,
+       -sum(Decode(Msi.Attribute2, '耗材', s.Primary_Quantity, 0)) Haoc_Qty,
+       -round(SUM(Decode(Msi.Attribute2,
+                         '耗材',
+                         s.Primary_Quantity * s.Actual_Cost,
+                         0)),
+              2) Haoc_Amount,*/
+              
+              
+/*       -sum(Decode(Msi.Attribute2, '工器具', s.Primary_Quantity, 0)) Gqj_Qty,
+       -round(SUM(Decode(Msi.Attribute2,
+                         '工器具',
+                         s.Primary_Quantity * s.Actual_Cost,
+                         0)),
+              2) Gqj_Amount,*/
+            s.attribute2 s2,msi.attribute2,msi.description,msi.segment1 , s.transaction_quantity, s.actual_cost,
+            s.subinventory_code,s.transfer_subinventory, s.transaction_date,
+            s.transaction_type_id,st.transaction_type_name,
+            
+            s.*  
+              
+/*       -sum(Decode(Msi.Attribute2, '劳保用品', s.Primary_Quantity, 0)) Lbyp_Qty,
+       -round(SUM(Decode(Msi.Attribute2,
+                         '劳保用品',
+                         s.Primary_Quantity * s.Actual_Cost,
+                         0)),
+              2) Lbyp_Amount,
+       SUM(Decode(Msi.Attribute2,
+                  '劳保用品',
+                  0,
+                  '备品备件',
+                  0,
+                  '耗材',
+                  0,
+                  '工器具',
+                  0,
+                  s.Primary_Quantity)) OTHERS,*/
+       /*Cux_Inv_Total_Count_Pkg.Get_Dept_Center(s.Attribute2,
+                                               s.Organization_Id) Center_Code,
+       Cux_Inv_Total_Count_Pkg.Get_Item_Count(Cux_Inv_Total_Count_Pkg.Get_Dept_Center(s.Attribute2,
+                                                                                      s.Organization_Id),
+                                              s.Organization_Id,
+                                              To_Date('2014/07/25 00:00:00',
+                                                      'yyyy/mm/dd hh24:mi:ss'),
+                                              To_Date('2014/08/25 23:59:59',
+                                                      'yyyy/mm/dd hh24:mi:ss')) Item_Count*/
+  FROM Mtl_Material_Transactions s,
+       mtl_transaction_types     st,
+       Mtl_System_Items_b        Msi,
+       Mtl_Secondary_Inventories Mii
+ WHERE s.Organization_Id = Msi.Organization_Id
+   AND Msi.Inventory_Item_Id = s.Inventory_Item_Id
+   AND s.Subinventory_Code <> 'FZH0001'
+   and s.transaction_type_id=st.transaction_type_id
+   AND Msi.Item_Type = 'WZ'
+   AND s.Organization_Id = 969 --p_Organization_Id
+   AND (s.Transaction_Date >=
+       To_Date('2014/07/25 00:00:00', 'yyyy/mm/dd hh24:mi:ss') OR
+       To_Date('2014/07/25 00:00:00', 'yyyy/mm/dd hh24:mi:ss') IS NULL)
+   AND (s.Transaction_Date <=
+       To_Date('2014/08/25 23:59:59', 'yyyy/mm/dd hh24:mi:ss') + 0.99999 OR
+       To_Date('2014/08/25 23:59:59', 'yyyy/mm/dd hh24:mi:ss') IS NULL) --99
+   AND s.Subinventory_Code = Mii.Secondary_Inventory_Name
+   AND Mii.Organization_Id = s.Organization_Id
+   AND Mii.Attribute1 = '1'
+   AND s.Transaction_Type_Id IN (121, 124, 122, 31)
+   and msi.attribute2='工器具'
+/*GROUP BY Cux_Inv_Total_Count_Pkg.Get_Dept_Center(s.Attribute2,
+                                                                s.Organization_Id),
+                        s.Organization_Id*/

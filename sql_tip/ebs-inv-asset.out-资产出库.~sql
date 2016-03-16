@@ -1,0 +1,28 @@
+
+
+/*select * from MTL_MATERIAL_TRANSACTIONS m
+where m.attribute8 is not null
+      and m.attribute2 in ('LY2Y201602150001','LY2Y201602180001')
+;
+*/
+
+/*
+Cux_Mmt_Pre_Asset_Trg
+
+列管物资出库触发器
+cux_mmt_max_item_trg
+*/
+
+-- 列管、固资maximo实物管理接口表
+select * from maxora.MXTDETAIL_IFACE
+where issuenum in ('CK201602180044','CK201602180045')
+;
+
+-- 试运营、运营阶段资产出库写转资信息
+select * from Cux_Pre_Delivery_Asset
+;
+
+-- 筹备期阶段资产出库写临时表
+select * from Cux_Pre_Delivery_Asset_temp
+;
+

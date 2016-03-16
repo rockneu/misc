@@ -1,0 +1,4 @@
+--inventory organization info
+select * from org_organization_definitions order by organization_code; 
+
+--SELECT DISTINCT ORGANIZATION_CODE FROM org_organization_definitions ORDER BY 1;

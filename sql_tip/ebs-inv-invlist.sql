@@ -1,0 +1,54 @@
+SELECT 
+       
+/*       ood.organization_code org_code,
+       msi.disable_date,
+--       msi.locator_type,                  -- 货位控制 1-无，2-预指定
+       decode(msi.locator_type,1,'无',2,'预指定') 货位,
+       msi.secondary_inventory_name,
+       msi.attribute1  ,                    -- 总库二级库
+       msi.description
+       ,hou.organization_id ou_org_id,
+       hou.NAME ou_name,
+       ood.organization_id org_org_id
+       */
+-- for exporting       
+
+--       msi.locator_type,                  -- 货位控制 1-无，2-预指定
+
+       msi.secondary_inventory_name,
+       msi.description ,
+--       decode(msi.locator_type,1,'无',2,'预指定') 货位控制,
+       decode(msi.locator_type,1,'无',2,'预指定') 货位控制,
+       msi.attribute1 总二
+--       decode(msi.attribute1, 1, '总库', 2,'二级库')                      -- 总库二级库
+       
+  FROM hr_organization_information  hoi,
+       hr_organization_units        hou,
+       org_organization_definitions ood,
+       mtl_secondary_inventories    msi
+ WHERE hoi.org_information1 = 'OPERATING_UNIT'
+   AND hoi.organization_id = hou.organization_id
+   AND ood.operating_unit = hoi.organization_id
+   AND ood.organization_id = msi.organization_id
+   and ood.organization_code in (303/*,303*/)
+   and msi.disable_date is null
+   and msi.locator_type=1
+   and msi.attribute1=1
+--   and msi.secondary_inventory_name like 'L01GJ%'
+ ORDER BY  msi.secondary_inventory_name
+           ,   msi.attribute1
+ ;   
+ 
+ 
+/*
+SELECT
+--       ORGANIZATION_ID,
+       SUBINVENTORY_CODE,
+       segment1,
+       DESCRIPTION
+       
+  FROM MTL_ITEM_LOCATIONS
+ WHERE (ORGANIZATION_ID = 969)             -- 969 -303, 102 - 301
+ order by 1,2
+ ;
+

@@ -1,0 +1,30 @@
+SELECT msi.segment1,
+       msi.description,
+       CIC.Description 申领中心,
+       CID.Description 申领车间,
+       
+       pl.list_price,
+       pl.plan_quantity,
+       pl.list_price*pl.plan_quantity as cost,
+
+       pl.*
+  FROM CUX_INV_PLAN_LINES pl,
+       mtl_system_items_b msi,
+       
+       Cux_Inv_Depts_v   cid,
+       Cux_Inv_Centers_v cic
+
+ WHERE pl.HEADER_ID IN
+       (SELECT HEADER_ID
+          FROM cux_inv_plan_headerS
+         WHERE PLAN_CODE = 'JH201304270001')
+   AND PL.inventory_item_id = MSI.INVENTORY_ITEM_ID
+   and pl.organization_id = 102
+   and msi.organization_id=pl.organization_id
+      
+   and pl.center_id = cic.Flex_Value_Id
+   and pl.dept_id = cid.Flex_Value_Id
+--   and msi.segment1 like '30006%'
+--   and CIC.Description='车辆中心'
+ ORDER BY 3;
+--select * from mtl_system_items_b

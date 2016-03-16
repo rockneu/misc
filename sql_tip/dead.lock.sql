@@ -1,0 +1,58 @@
+
+/*
+select b.owner, b.object_name, a.session_id, a.locked_mode
+  from v$locked_object a, dba_objects b
+ where b.object_id = a.object_id
+ order by a.session_id;
+
+--select * from v$session where sid in (select session_id from v$locked_object)
+;
+select b.username, b.sid, b.serial#, logon_time, b.CLIENT_IDENTIFIER
+  from v$locked_object a, v$session b
+ where a.session_id = b.sid
+--order by b.logon_time
+ order by b.SID;
+
+select b.owner,
+       b.object_name,
+       a.session_id,
+       c.SERIAL#,
+       a.locked_mode,
+       c.CLIENT_IDENTIFIER
+  from v$locked_object a, 
+       dba_objects b, 
+       v$session c
+ where b.object_id = a.object_id
+   and a.SESSION_ID = c.SID
+   and b.OBJECT_NAME LIKE 'MTL_SYSTEM_ITEMS%'
+-- order by c.sid, b.OBJECT_NAME;
+ order by b.OBJECT_NAME;
+
+*/
+
+--alter system kill session 'sid,serial#'
+--alter system kill session '2071,13244'
+
+SELECT  CONCAT('ALTER SYSTEM KILL SESSION ''', CONCAT(CONCAT(CONCAT(T.session_id, ','), T.SERIAL#), ''';'))
+  FROM (  select b.owner,
+               b.object_name,
+               a.session_id,
+               c.SERIAL#,
+               a.locked_mode,
+               c.CLIENT_IDENTIFIER
+          from v$locked_object a, dba_objects b, v$session c
+         where b.object_id = a.object_id
+           and a.SESSION_ID = c.SID
+           and b.OBJECT_NAME LIKE 'MTL_SYSTEM_ITEMS%'
+        -- order by c.sid, b.OBJECT_NAME;
+         order by b.OBJECT_NAME   )  T
+
+-- WHERE T.CLIENT_IDENTIFIER = 'CHENJINGXIA'
+ ;
+ 
+--select * from v$session where USERNAME = 'CHENJINGXIA'
+/*
+SELECT CONCAT('ALTER SYSTEM KILL SESSION ''',
+              CONCAT(CONCAT(CONCAT(SID, ','), SERIAL#), ''';'))
+  FROM V$SESSION
+ WHERE USERNAME = 'CHENJINGXIA'

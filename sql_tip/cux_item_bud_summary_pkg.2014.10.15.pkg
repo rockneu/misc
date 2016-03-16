@@ -1,0 +1,2250 @@
+PROCEDURE MAIN(ERRBUF            OUT VARCHAR2,
+                 RETCODE           OUT NUMBER,
+                 P_DEPT_CODE       IN VARCHAR2 ,
+                 P_YEAR            IN NUMBER ,
+                 P_BUD_TYPE        IN VARCHAR2,
+                 P_CLASS2          IN VARCHAR2,
+                 P_ORGANIZATION_CODE  IN VARCHAR2
+                 ) AS
+    V_NBSP VARCHAR2(50) := '&' || 'nbsp;';
+    V_DEPT_CODE   VARCHAR2(100) := P_DEPT_CODE;
+    V_YEAR        NUMBER:= P_YEAR;
+    V_BUD_TYPE    VARCHAR2(100) := P_BUD_TYPE;
+    V_CLASS2      VARCHAR2(100) := P_CLASS2;
+    V_ORGANIZATION_CODE     VARCHAR2(100) := P_ORGANIZATION_CODE;
+    V_COL_SPAN    number;
+    P_FONT_SIZE   number;
+
+    V_DOC_TITLE   VARCHAR2(30) := '物资预算消耗明细报表';
+    v_id          number;
+    v_sub_id      number;
+    v_seq_id      number;
+    i1            number;
+    i2            number;
+    i3            number;
+    i4            number;
+    i5            number;
+    i6            number;
+    i7            number;
+    j1            number;    
+    j2            number;
+    var_count1    number;
+    var_count2    number;    
+    v_batch_time  number;
+    v_bud_amt     number;
+    v_demand_no   varchar2(100);
+    v_item_no     varchar2(100);
+    v_item_desc   varchar2(1000);
+    v_unit_price  number;
+    v_qty         number;
+    v_amt         number;
+    var_sub_id_rsv number; 
+    var_sub_id_usr number; 
+    var_sub_id_final number;  
+    var_demand_code varchar2(100);
+    var_unit_price  number;
+    var_qty         number;
+    var_po_num      varchar2(100); 
+    var_po_line_num  varchar2(100); 
+    var_po_qty      number;
+    var_po_price    number;
+    
+    
+    cursor c_summary is select * from CUX_INV_BUD_ITEM_CAT_NEW_V /*CUX_INV_BUD_ITEM_CAT_V*/ 
+    where organization_id in (102, 969)
+    and   center_id=nvl(P_DEPT_CODE, center_id)
+    and   bud_year=nvl(P_YEAR, bud_year)
+    and   bud_type=nvl(P_BUD_TYPE, bud_type)
+    and   item_cat2=nvl(P_CLASS2, item_cat2)
+    and   organization_id=decode(P_ORGANIZATION_CODE,'301',102,'303',969,organization_id);
+
+    cursor c_summary_temp is
+    select * from CUX_ITEM_BUD_SUMMARY_T t
+    where/* t.item_cat2='30.003'
+    and t.center_name='车辆中心'
+    and t.bud_year='2013'
+    and*/ seq_id=v_seq_id
+    order by id;
+    ---预算明细
+    cursor c_budget_detail(V_ITEM_CAT2 in varchar2,V_ITEM_CAT2_desc in varchar2,
+                 V_ORGANIZATION_ID in number,V_CENTER_ID in number,V_BUD_YEAR in varchar2, V_BUD_TYPE in varchar2) is
+    select * from CUX_INV_BUD_ITEM_DETAIL_V t
+        where t.ITEM_CAT2=V_Item_Cat2
+     --   and   nvl(t.ITEM_CAT2_desc,-999)=nvl(V_Item_Cat2_desc,-999)
+        and   t.ORGANIZATION_ID=V_Organization_Id
+        and   t.CENTER_ID=V_Center_Id
+        and   t.BUD_YEAR=V_Bud_Year
+        and   t.BUD_TYPE=V_Bud_Type
+        order by t.attribute1 ;
+        
+     ---冻结
+     cursor c_rsv (p_item_cat        IN VARCHAR2, 
+        p_item_cat_desc        IN VARCHAR2, 
+        p_organization_id IN NUMBER,
+        p_center_id       IN NUMBER,       
+        p_bud_year        IN NUMBER,    
+        p_bud_type        IN VARCHAR2                   
+         ) is 
+       SELECT h.demand_code,msib.segment1,msib.description,
+              l.list_price,SUM(nvl(l.req_quantity, 0)) qty,SUM(nvl(l.req_quantity, 0) * nvl(l.list_price, 0)) amt,
+              l.attribute1 /*Mcb.Segment1 || '.' || Mcb.Segment2*/ Item_Cat2,
+              null Item_Cat2_Desc,
+              h.Organization_Id,
+              h.Center_Id,
+              h.Bud_Year,
+              h.demand_type     
+      /* FROM Mtl_System_Items_b  b,
+            cux_inv_demand_lines   l,
+            cux_inv_demand_headers h,     
+            Mtl_Item_Categories Mic,
+            Mtl_Categories_Vl   Mcb
+      WHERE h.Header_Id = l.Header_Id
+      AND   l.Inventory_Item_Id = b.Inventory_Item_Id
+      AND l.Organization_Id = b.Organization_Id 
+      AND Mic.Inventory_Item_Id = l.Inventory_Item_Id
+      AND Mic.Organization_Id = l.Organization_Id
+      AND Mic.Category_Id = Mcb.Category_Id
+      AND Mic.Category_Set_Id = 1 --Inventory  
+      AND (h.status in  ('IN PROCESS'\*,'REAPPROVAL'*\) 
+           OR 
+           (h.status in  ('APPROVED') AND (l.attribute11 = 'RETURN' OR nvl(l.return_flag,'N') = 'Y'))
+           )
+      AND Mcb.Segment1 || '.' || Mcb.Segment2=p_item_cat 
+      AND l.Organization_Id=p_organization_id
+      AND h.center_id=p_center_id
+      AND h.bud_year=p_bud_year
+      AND h.demand_type=p_bud_type
+    --  AND l.attribute12 is null*/
+    		FROM cux_inv_demand_lines   l
+       ,mtl_system_items_b msib
+							,cux_inv_demand_headers h
+				 WHERE l.header_id = h.header_id
+					 AND l.attribute1 = p_item_cat --大类.中类
+					 AND h.bud_year = p_bud_year
+					 AND h.center_id = p_center_id
+					 --AND h.demand_type = p_bud_type
+   AND decode(h.demand_type,'劳保物资','生产性','固定资产','生产性',h.demand_type) = p_bud_type--'生产性'--
+					 AND h.organization_id = p_organization_id
+   AND msib.organization_id = l.organization_id
+   AND msib.inventory_item_id = l.inventory_item_id
+   --AND decode(nvl(msib.item_type,msib.item_type),'WZ','生产性','非生产性')=p_bud_type
+					 AND (h.status in  ('IN PROCESS'/*,'REAPPROVAL'*/) 
+           OR 
+           (h.status in  ('APPROVED') AND (l.attribute11 = 'RETURN' OR nvl(l.return_flag,'N') = 'Y'))
+           )      
+      --------------------------------------------------------
+      -- added by liuwei 2014.10.13     
+               AND NOT EXISTS (
+           SELECT 1 FROM
+      cux_inv_plan_lines       pl
+      ,po_requisition_lines_all prl
+      ,po_req_distributions_all prd
+      ,po_distributions_all     pod
+      WHERE 1=1
+       AND l.line_id = pl.demand_line_id
+       AND pl.requisition_line_id = prl.requisition_line_id --计划行到申请行
+       AND prl.requisition_line_id = prd.requisition_line_id --申请行到申请分配行
+       AND prd.distribution_id = pod.req_distribution_id-- 申请分配行到采购分配行
+       AND pod.req_distribution_id IS NOT NULL
+      )
+      ---------------------------------------------------------     
+           AND l.attribute12 is null
+		
+      GROUP BY  h.demand_code,msib.segment1,msib.description,
+            l.list_price,l.attribute1,--Mcb.Segment1 || '.' || Mcb.Segment2,        
+            h.Organization_Id,
+            h.Center_Id,
+            h.Bud_Year,
+            h.demand_type;
+             
+          
+   ---暂扣
+     cursor c_usr (p_item_cat        IN VARCHAR2, 
+        p_item_cat_desc        IN VARCHAR2, 
+        p_organization_id IN NUMBER,
+        p_center_id       IN NUMBER,       
+        p_bud_year        IN NUMBER,    
+        p_bud_type        IN VARCHAR2                   
+         ) is 
+       SELECT h.demand_code,msib.segment1,msib.description,
+              l.list_price,SUM(nvl(l.req_quantity, 0)) qty,
+              ROUND(SUM(nvl(pll.quantity,nvl(l.req_quantity, 0)) * nvl(pol.market_price,nvl(l.list_price, 0))),2) amt,
+              l.attribute1  /*Mcb.Segment1 || '.' || Mcb.Segment2 */Item_Cat2,
+       null Item_Cat2_Desc,
+       h.Organization_Id,
+       h.Center_Id,
+       h.Bud_Year,
+       h.demand_type,    
+       DECODE(poh.type_lookup_code,
+              'STANDARD',
+              poh.segment1,
+              'BLANKET',
+              poh.segment1||'-'||pra.release_num,
+              poh.segment1) po_num, 
+       to_char(pol.line_num ) line_num,
+       pll.quantity po_qty,
+       pol.market_price po_price
+             
+     FROM cux_inv_demand_lines     l
+       ,mtl_system_items_b msib
+      ,cux_inv_demand_headers   h
+      ,cux_inv_plan_lines       pl
+      ,po_requisition_lines_all prl
+      ,po_req_distributions_all prd
+      ,po_distributions_all     pod
+      ,po_line_locations_all pll
+      ,po_headers_all   poh
+      ,po_lines_all pol
+      ,po_releases_all pra
+ WHERE l.header_id = h.header_id
+   AND l.attribute1 = p_item_cat --'28.007'--大类.中类
+   AND h.bud_year = p_bud_year--'2013'--
+   AND h.center_id =  p_center_id--70585-- 中心部门
+   AND decode(h.demand_type,'劳保物资','生产性','固定资产','生产性',h.demand_type) = p_bud_type--'生产性'--
+   --AND h.demand_type = p_bud_type--'生产性'--
+   AND msib.organization_id = l.organization_id
+   AND msib.inventory_item_id = l.inventory_item_id
+   --AND decode(nvl(msib.item_type,msib.item_type),'WZ','生产性','非生产性')=p_bud_type
+   AND h.organization_id = p_organization_id--102-- 
+   AND h.status = 'APPROVED'
+   AND (nvl(l.attribute11,'-1') <> 'RETURN' OR nvl(l.return_flag,'N') <> 'Y') -- 退回的行算暂扣
+   --AND l.attribute12 = 'PO'
+   AND l.line_id = pl.demand_line_id(+)
+   AND pl.requisition_line_id = prl.requisition_line_id(+) --计划行到申请行
+   AND prl.requisition_line_id = prd.requisition_line_id(+) --申请行到申请分配行
+   AND prd.distribution_id = pod.req_distribution_id(+)-- 申请分配行到采购分配行
+   AND pod.line_location_id = pll.line_location_id(+) -- 申请分配行到采购分配发运行
+   AND pod.po_line_id = pol.po_line_id(+)--采购分配行到采购订单行
+   AND pod.po_header_id = poh.po_header_id(+)
+   AND pod.po_release_id = pra.po_release_id(+)
+   AND nvl(pra.authorization_status,nvl(poh.authorization_status,'-1')) <> 'APPROVED'-- 如果已审批，且没有采购订单生成，且状态为已审批，则为暂扣金额
+
+
+ GROUP BY  h.demand_code,msib.segment1,msib.description,
+           l.list_price,l.attribute1/*Mcb.Segment1 || '.' || Mcb.Segment2*/,
+           h.Organization_Id,
+          h.Center_Id,
+          h.Bud_Year,
+          h.demand_type,
+          DECODE(poh.type_lookup_code,
+              'STANDARD',
+              poh.segment1,
+              'BLANKET',
+              poh.segment1||'-'||pra.release_num,
+              poh.segment1),
+          pol.line_num,
+          pll.quantity,
+          pol.market_price;      
+            
+      ---实扣
+     cursor c_final (p_item_cat        IN VARCHAR2, 
+        p_item_cat_desc        IN VARCHAR2, 
+        p_organization_id IN NUMBER,
+        p_center_id       IN NUMBER,       
+        p_bud_year        IN NUMBER,    
+        p_bud_type        IN VARCHAR2                   
+         ) is 
+       SELECT h.demand_code dc,l.list_price d_list_price,l.req_quantity,
+              poh.segment1 demand_code,msib.segment1,msib.description,
+              pol.market_price /*l.*/list_price,SUM(nvl(pll.quantity/*l.req_quantity*/, 0)) qty,
+              SUM(nvl(pll.quantity/*l.req_quantity*/, 0) * nvl(pol.market_price/*l.list_price*/, 0)) amt,
+         /*Mcb.Segment1 || '.' || Mcb.Segment2*/l.attribute1 Item_Cat2,
+      /* Substr(Mcb.Description, 1, Instr(Mcb.Description, '-', 1, 2) - 1) */null Item_Cat2_Desc,
+       h.Organization_Id,
+       h.Center_Id,
+       h.Bud_Year,
+       h.demand_type      
+  FROM cux_inv_demand_lines     l
+       ,mtl_system_items_b msib
+      ,cux_inv_demand_headers   h
+      ,cux_inv_plan_lines       pl
+      ,po_requisition_lines_all prl
+      ,po_req_distributions_all prd
+      ,po_distributions_all     pod
+      ,po_line_locations_all pll
+      ,po_lines_all pol
+      ,po_headers_all poh
+      ,po_releases_all pra
+ WHERE l.header_id = h.header_id
+   AND l.attribute1 = p_item_cat --'28.007'--大类.中类
+   AND h.bud_year = p_bud_year--'2013'--
+   AND h.center_id =  p_center_id--70585-- 中心部门
+   --AND h.demand_type = p_bud_type--'生产性'--
+   AND h.organization_id = p_organization_id--102-- 
+   AND msib.organization_id = l.organization_id
+   AND msib.inventory_item_id = l.inventory_item_id
+   AND decode(h.demand_type,'劳保物资','生产性','固定资产','生产性',h.demand_type)=p_bud_type
+   -- AND h.status = 'APPROVED'
+   -- AND l.attribute12 = 'PO'
+   AND l.line_id = pl.demand_line_id
+   AND pl.requisition_line_id = prl.requisition_line_id --计划行到申请行
+   AND prl.requisition_line_id = prd.requisition_line_id --申请行到申请分配行
+   AND prd.distribution_id = pod.req_distribution_id-- 申请分配行到采购分配行
+   AND pod.line_location_id = pll.line_location_id-- 申请分配行到采购分配发运行
+   AND pod.po_line_id = pol.po_line_id --采购分配行到采购订单行
+   AND pol.po_header_id = poh.po_header_id
+   AND pod.po_release_id = pra.po_release_id(+)
+   --AND poh.AUTHORIZATION_STATUS = 'APPROVED'
+   AND nvl(pra.authorization_status,nvl(poh.authorization_status,'-1')) = 'APPROVED'
+   -- 如果已审批，且没有采购订单生成，且状态为已审批，则为暂扣金额
+  
+   --AND h.demand_code = 'SQ201303290002' APPROVED
+ GROUP BY  h.demand_code,poh.segment1,msib.segment1,msib.description,
+           pol.market_price/*l.list_price*/,l.attribute1/*Mcb.Segment1 || '.' || Mcb.Segment2*/,
+       --    Substr(Mcb.Description, 1, Instr(Mcb.Description, '-', 1, 2) - 1),
+           h.Organization_Id,
+           h.Center_Id,
+           h.Bud_Year,
+           h.demand_type,
+           l.list_price,l.req_quantity; 
+  cursor rsv_new is 
+  select  * from CUX_ITEM_BUD_RSV_T where seq_id=v_seq_id
+  order by id,sub_id; 
+  
+  cursor usr_new_group is 
+  select  distinct id from CUX_ITEM_BUD_USR_T where seq_id=v_seq_id
+  ;  
+  
+  cursor usr_new (p_id in number)is 
+  select  * from CUX_ITEM_BUD_USR_T where seq_id=v_seq_id 
+  and id=p_id
+  order by id,sub_id;  
+  
+  
+  cursor final_new (p_id in number,p_demand_code in varchar2,p_item_no in varchar2) is 
+  select  * from CUX_ITEM_BUD_FINAL_T 
+  where id=p_id
+  and demand_no=p_demand_code
+  and item_no=p_item_no;        
+ 
+ cursor rec_minus_group is 
+ select id from 
+   (
+    select * from CUX_ITEM_BUD_FINAL_T
+    minus 
+    select * from CUX_ITEM_BUD_FINAL_T_new)
+    group by id;
+  
+  cursor rec_minus(p_id in number) is 
+  select ID,
+      --  SUB_ID,
+        demand_no,
+        d_unit_price,
+        d_qty,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        CENTER_ID,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        PO_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        nvl(sum(QTY),0) qty,
+        nvl(sum(AMT),0) amt from 
+   (
+    select * from CUX_ITEM_BUD_FINAL_T
+    where seq_id=v_seq_id
+    minus 
+    select * from CUX_ITEM_BUD_FINAL_T_new
+    where seq_id=v_seq_id)
+   where id=p_id
+   group by  ID,
+        demand_no,
+        d_unit_price,
+        d_qty,
+     --   SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        CENTER_ID,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        PO_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE/*,
+        QTY,
+        AMT*/;
+
+  BEGIN
+    CUX_COMMON_PKG.LOG_MSG('**************************************************************');
+    CUX_COMMON_PKG.LOG_MSG('程序开始运行  ' ||
+                           TO_CHAR(SYSDATE,
+                                   'yyyy-mm-dd hh24:mi:ss'));
+    delete from CUX_ITEM_BUD_SUMMARY_T where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_SUMMARY_TEMP where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_DETAIL_T where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_RSV_T where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_USR_T where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_RSV_T_new where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_USR_T_new where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_FINAL_T where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_FINAL_T_NEW where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_RSV_TEMP where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_USR_TEMP where creation_date<sysdate-5;
+    delete from CUX_ITEM_BUD_FINAL_TEMP where creation_date<sysdate-5;
+    
+    commit;
+    v_id:=0;
+    v_seq_id:=CUX_ITEM_BUD_SUMMARY_SEQ.NEXTVAL;
+    fnd_file.PUT_LINE(fnd_file.LOG,'seq_id:'||v_seq_id);
+    for rec_main in c_summary loop
+       v_id:=v_id+1;
+       insert into CUX_ITEM_BUD_SUMMARY_TEMP (
+       ID,
+       SEQ_ID,
+       CREATION_DATE,
+       ORGANIZATION_ID,
+       ORGANIZATION_CODE,
+       ORGANIZATION_NAME,
+       CENTER_ID,
+       CENTER_CODE,
+       CENTER_NAME,
+       ITEM_CAT2,
+       ITEM_CAT2_DESC,
+       BUD_YEAR,
+       BUD_TYPE,
+       BUD_FIRST_AMT,
+       BUD_END_AMT,
+       BUD_RSV,
+       BUD_USR,
+       BUD_FINAL,
+       BUD_USE
+       )
+       select
+       v_id,
+       v_seq_id,
+       sysdate,
+       t.Organization_Id,
+       org.ORGANIZATION_CODE,
+       decode(t.Organization_Id,102,'1号线',969,'2号线'),
+       t.CENTER_ID,
+       t.CENTER_CODE,
+       t.CENTER_NAME,
+       t.ITEM_CAT2,
+       t.ITEM_CAT2_DESC,
+       t.BUD_YEAR,
+       t.BUD_TYPE,
+       first.BUD_AMOUNT_FIRST,
+       t.BUD_AMOUNT,
+       t.BUD_RSV,
+       t.BUD_USR,
+       t.BUD_FINAL,
+       nvl(t.BUD_AMOUNT,0)-nvl(t.BUD_rsv,0)-nvl(t.BUD_usr,0)-nvl(t.BUD_final,0)
+       from CUX_INV_BUD_ITEM_CAT_new_V t,
+            org_organization_definitions org,
+            CUX_INV_BUD_ITEM_FIRST_V first
+       where t.Organization_Id in (102,969)
+       and   t.Organization_Id=org.ORGANIZATION_ID
+       --
+       and   t.ITEM_CAT2=first.Item_Cat2(+)
+   --    and   nvl(t.ITEM_CAT2_desc,-999)=first.Item_Cat2_desc(+)
+       and   t.ORGANIZATION_ID=first.Organization_Id(+)
+       and   t.CENTER_ID=first.Center_Id(+)
+       and   t.BUD_YEAR=first.Bud_Year(+)
+       and   t.BUD_TYPE=first.Bud_Type(+)
+       --
+       and   t.ITEM_CAT2=rec_main.Item_Cat2
+      -- and   nvl(t.ITEM_CAT2_desc,1)=nvl(rec_main.Item_Cat2_desc,1)
+       and   t.ORGANIZATION_ID=rec_main.Organization_Id
+       and   t.CENTER_ID=rec_main.Center_Id
+       and   t.BUD_YEAR=rec_main.Bud_Year
+       and   t.BUD_TYPE=rec_main.Bud_Type
+
+
+       ;
+    end loop;
+    commit;
+    insert into CUX_ITEM_BUD_SUMMARY_T(ID,
+    SEQ_ID,
+   -- CREATION_DATE,
+    ORGANIZATION_ID,
+    ORGANIZATION_CODE,
+    ORGANIZATION_NAME,
+    CENTER_ID,
+    CENTER_CODE,
+    CENTER_NAME,
+    ITEM_CAT2,
+    ITEM_CAT2_DESC,
+    BUD_YEAR,
+    BUD_TYPE,
+    BUD_FIRST_AMT,
+    BUD_END_AMT,
+    BUD_RSV,
+    BUD_USR,
+    BUD_FINAL,
+    BUD_USE)
+    select 
+    ID,
+    SEQ_ID,
+    --CREATION_DATE
+    ORGANIZATION_ID,
+    ORGANIZATION_CODE,
+    ORGANIZATION_NAME,
+    CENTER_ID,
+    CENTER_CODE,
+    CENTER_NAME,
+    ITEM_CAT2,
+    ITEM_CAT2_DESC,
+    BUD_YEAR,
+    BUD_TYPE,
+    sum(BUD_FIRST_AMT),
+    max(BUD_END_AMT),
+    max(BUD_RSV),
+    max(BUD_USR),
+    max(BUD_FINAL),
+    max(BUD_USE)
+    from CUX_ITEM_BUD_SUMMARY_Temp 
+    where seq_id=v_seq_id
+    group by ID,
+    SEQ_ID,
+    --CREATION_DATE
+    ORGANIZATION_ID,
+    ORGANIZATION_CODE,
+    ORGANIZATION_NAME,
+    CENTER_ID,
+    CENTER_CODE,
+    CENTER_NAME,
+    ITEM_CAT2,
+    ITEM_CAT2_DESC,
+    BUD_YEAR,
+    BUD_TYPE;
+    
+    --预算明细
+  for rec_main in c_summary_temp loop
+        v_sub_id:=0;
+        for rec_budget_detail in c_budget_detail (rec_main.ITEM_CAT2,
+                rec_main.ITEM_CAT2_DESC,rec_main.organization_id,
+                rec_main.CENTER_ID,rec_main.bud_year,
+                rec_main.bud_type) loop
+        v_sub_id:=v_sub_id+1;
+        insert into CUX_ITEM_BUD_DETAIL_T
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        CENTER_ID,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        BATCH_TIME,
+        BUD_AMT)
+        select
+        rec_main.id,
+        v_sub_id,
+        rec_main.seq_id,
+        sysdate,
+        rec_main.organization_id,
+        rec_main.CENTER_ID,
+        rec_main.ITEM_CAT2,
+        rec_main.ITEM_CAT2_DESC,
+        rec_main.bud_year,
+        rec_main.bud_type,
+        rec_budget_detail.attribute1,
+        rec_budget_detail.Bud_Amount
+        from dual;
+        end loop;      
+      end loop;
+      commit;
+     --冻结
+     
+     for rec_main in c_summary_temp loop
+      v_sub_id:=0;
+      begin
+      
+      for rec_budget_rsv in c_rsv (rec_main.ITEM_CAT2,
+                rec_main.ITEM_CAT2_DESC,rec_main.organization_id,
+                rec_main.CENTER_ID,rec_main.bud_year,
+                rec_main.bud_type) loop                       
+        v_sub_id:=v_sub_id+1;
+       
+        insert into CUX_ITEM_BUD_RSV_TEMP
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        ORGANIZATION_CODE,
+        CENTER_ID,
+        CENTER_NAME,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        DEMAND_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT)
+        select
+        rec_main.id,
+        v_sub_id,
+        rec_main.seq_id,
+        sysdate,
+        rec_main.organization_id,
+        rec_main.organization_code,
+        rec_main.CENTER_ID,
+        rec_main.CENTER_name,
+        rec_main.ITEM_CAT2,
+        rec_main.ITEM_CAT2_DESC,
+        rec_main.bud_year,
+        rec_main.bud_type,
+        rec_budget_rsv.demand_code,
+        rec_budget_rsv.segment1,
+        rec_budget_rsv.description,
+        rec_budget_rsv.list_price,
+        rec_budget_rsv.qty,
+        rec_budget_rsv.amt
+        from dual;
+          fnd_file.PUT_LINE(fnd_file.LOG,'v_sub_id:'||v_sub_id);
+         fnd_file.PUT_LINE(fnd_file.LOG,'rec_budget_rsv.demand_code:'||rec_budget_rsv.demand_code);
+      end loop; 
+    exception when others then
+        commit;
+        fnd_file.PUT_LINE(fnd_file.LOG,'冻结金额数据例外');
+        fnd_file.PUT_LINE(fnd_file.LOG,sqlcode);
+        fnd_file.PUT_LINE(fnd_file.LOG,sqlerrm);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.ITEM_CAT2);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT288'||rec_main.ITEM_CAT2_desc);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.organization_id);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.CENTER_ID);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.bud_year);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT288'||rec_main.bud_type);
+    end;       
+    end loop;
+    commit;
+    
+   --暂扣
+   
+    for rec_main in c_summary_temp loop
+       
+      v_sub_id:=0;
+      begin
+      for rec_budget in c_usr (rec_main.ITEM_CAT2,
+                rec_main.ITEM_CAT2_DESC,rec_main.organization_id,
+                rec_main.CENTER_ID,rec_main.bud_year,
+                rec_main.bud_type) loop
+           
+        v_sub_id:=v_sub_id+1;
+        insert into CUX_ITEM_BUD_USR_TEMP
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        CENTER_ID,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        DEMAND_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT,
+        po_num,
+        po_line_num,
+        po_qty,
+        po_price)
+        select
+        rec_main.id,
+        v_sub_id,
+        rec_main.seq_id,
+        sysdate,
+        rec_main.organization_id,
+        rec_main.CENTER_ID,
+        rec_main.ITEM_CAT2,
+        rec_main.ITEM_CAT2_DESC,
+        rec_main.bud_year,
+        rec_main.bud_type,
+        rec_budget.demand_code,
+        rec_budget.segment1,
+        rec_budget.description,
+        rec_budget.list_price,
+        rec_budget.qty,
+        rec_budget.amt,
+        rec_budget.po_num,
+        rec_budget.line_num,
+        rec_budget.po_qty,
+        rec_budget.po_price
+        from dual;
+      end loop;  
+   exception when others then
+        commit;
+        fnd_file.PUT_LINE(fnd_file.LOG,'暂扣金额数据例外');
+        fnd_file.PUT_LINE(fnd_file.LOG,sqlcode);
+        fnd_file.PUT_LINE(fnd_file.LOG,sqlerrm);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.ITEM_CAT2);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT288'||rec_main.ITEM_CAT2_desc);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.organization_id);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.CENTER_ID);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.bud_year);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT288'||rec_main.bud_type);
+    end;      
+    end loop;
+    commit;
+    
+    --实扣
+   
+    for rec_main in c_summary_temp loop
+       
+      v_sub_id:=0;
+      begin
+      for rec_budget in c_final (rec_main.ITEM_CAT2,
+                rec_main.ITEM_CAT2_DESC,rec_main.organization_id,
+                rec_main.CENTER_ID,rec_main.bud_year,
+                rec_main.bud_type) loop
+           
+        v_sub_id:=v_sub_id+1;
+        insert into CUX_ITEM_BUD_FINAL_TEMP
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        CENTER_ID,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        PO_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT,
+        demand_no,
+        d_unit_price,
+        d_qty)
+        select
+        rec_main.id,
+        v_sub_id,
+        rec_main.seq_id,
+        sysdate,
+        rec_main.organization_id,
+        rec_main.CENTER_ID,
+        rec_main.ITEM_CAT2,
+        rec_main.ITEM_CAT2_DESC,
+        rec_main.bud_year,
+        rec_main.bud_type,
+        rec_budget.demand_code,
+        rec_budget.segment1,
+        rec_budget.description,
+        rec_budget.list_price,
+        rec_budget.qty,
+        rec_budget.amt,
+        rec_budget.dc,
+        rec_budget.d_list_price,
+        rec_budget.req_quantity 
+        from dual;
+      end loop;  
+    exception when others then
+        commit;
+        fnd_file.PUT_LINE(fnd_file.LOG,'实扣金额数据例外');
+        fnd_file.PUT_LINE(fnd_file.LOG,sqlcode);
+        fnd_file.PUT_LINE(fnd_file.LOG,sqlerrm);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.ITEM_CAT2);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT288'||rec_main.ITEM_CAT2_desc);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.organization_id);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.CENTER_ID);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT2'||rec_main.bud_year);
+        fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.ITEM_CAT288'||rec_main.bud_type);
+    end;      
+    end loop;
+    commit;
+    insert into CUX_ITEM_BUD_FINAL_T
+    select distinct * from CUX_ITEM_BUD_FINAL_TEMP where seq_id=v_seq_id;
+    insert into CUX_ITEM_BUD_RSV_T
+    select distinct * from CUX_ITEM_BUD_RSV_TEMP where seq_id=v_seq_id;
+    insert into CUX_ITEM_BUD_USR_T
+    select distinct * from CUX_ITEM_BUD_USR_TEMP where seq_id=v_seq_id;
+    commit;
+    --2014-07-05
+  /*  var_sub_id_rsv:=0;
+    var_sub_id_usr:=0;
+    var_sub_id_final:=0;
+    for rec in rsv_new loop
+        var_sub_id_rsv:=var_sub_id_final;
+        var_sub_id_rsv:=var_sub_id_rsv+1;
+        insert into CUX_ITEM_BUD_RSV_T_new
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        ORGANIZATION_CODE,
+        CENTER_ID,
+        CENTER_NAME,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        DEMAND_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT)
+        select 
+        rec.ID,
+        var_sub_id_rsv\*rec.SUB_ID*\,
+        rec.SEQ_ID,
+        rec.CREATION_DATE,
+        rec.ORGANIZATION_ID,
+        rec.ORGANIZATION_CODE,
+        rec.CENTER_ID,
+        rec.CENTER_NAME,
+        rec.ITEM_CAT2,
+        rec.ITEM_CAT2_DESC,
+        rec.BUD_YEAR,
+        rec.BUD_TYPE,
+        rec.DEMAND_NO,
+        rec.ITEM_NO,
+        rec.ITEM_DESC,
+        rec.UNIT_PRICE,
+        rec.QTY,
+        rec.AMT
+        from dual;
+        select count(*) into var_count1 from CUX_ITEM_BUD_FINAL_T
+        where id=rec.id
+        and demand_no=rec.demand_no
+        and item_no=rec.item_no;
+        if var_count1>0 then
+        for rec1 in final_new(rec.id,rec.demand_no,rec.item_no) loop
+        var_sub_id_final:=var_sub_id_final+1;
+        insert into CUX_ITEM_BUD_FINAL_T_NEW 
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        CENTER_ID,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        PO_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT,
+        DEMAND_NO)
+        select rec1.ID,
+        var_sub_id_final\*rec1.SUB_ID*\,
+        rec1.SEQ_ID,
+        rec1.CREATION_DATE,
+        rec1.ORGANIZATION_ID,
+        rec1.CENTER_ID,
+        rec1.ITEM_CAT2,
+        rec1.ITEM_CAT2_DESC,
+        rec1.BUD_YEAR,
+        rec1.BUD_TYPE,
+        rec1.PO_NO,
+        rec1.ITEM_NO,
+        rec1.ITEM_DESC,
+        rec1.UNIT_PRICE,
+        rec1.QTY,
+        rec1.AMT,
+        rec1.DEMAND_NO
+        from dual;
+        if var_sub_id_final>var_sub_id_rsv then
+          insert into CUX_ITEM_BUD_RSV_T_new
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        ORGANIZATION_CODE,
+        CENTER_ID,
+        CENTER_NAME,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        DEMAND_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT)
+        select 
+        rec.ID,
+        var_sub_id_final\*var_sub_id_rsv*\\*rec.SUB_ID*\,
+        rec.SEQ_ID,
+        rec.CREATION_DATE,
+        rec.ORGANIZATION_ID,
+        rec.ORGANIZATION_CODE,
+        rec.CENTER_ID,
+        rec.CENTER_NAME,
+        rec.ITEM_CAT2,
+        rec.ITEM_CAT2_DESC,
+        rec.BUD_YEAR,
+        rec.BUD_TYPE,
+        rec.DEMAND_NO,
+        rec.ITEM_NO,
+        rec.ITEM_DESC,
+        rec.UNIT_PRICE,
+        rec.QTY,
+        rec.AMT
+        from dual;
+        end if;
+       end loop;   
+       else------
+       var_sub_id_final:=var_sub_id_final+1;
+       insert into CUX_ITEM_BUD_FINAL_T_NEW 
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        CENTER_ID,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        PO_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT,
+        DEMAND_NO)
+        select rec.ID,
+        var_sub_id_final\*rec1.SUB_ID*\,
+        rec.SEQ_ID,
+        rec.CREATION_DATE,
+        rec.ORGANIZATION_ID,
+        rec.CENTER_ID,
+        rec.ITEM_CAT2,
+        rec.ITEM_CAT2_DESC,
+        rec.BUD_YEAR,
+        rec.BUD_TYPE,
+        null PO_NO,
+        null ITEM_NO,
+        null ITEM_DESC,
+        null UNIT_PRICE,
+        null QTY,
+        null AMT,
+        null DEMAND_NO
+        from dual;
+       end if;
+    end loop;
+    */
+      var_sub_id_rsv:=0;
+      var_sub_id_usr:=0;
+      var_sub_id_final:=0;
+      for rec1 in usr_new_group loop
+        var_sub_id_rsv:=0;
+        var_sub_id_usr:=0;
+        var_sub_id_final:=0;
+        for rec in usr_new(rec1.id) loop
+        var_sub_id_usr:=var_sub_id_final;
+        var_sub_id_usr:=var_sub_id_usr+1;
+        insert into CUX_ITEM_BUD_usr_T_new
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+     --   ORGANIZATION_CODE,
+        CENTER_ID,
+     --   CENTER_NAME,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        DEMAND_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT,
+        po_num,
+        po_line_num,
+        po_qty,
+        po_price)
+        select 
+        rec.ID,
+        var_sub_id_usr/*rec.SUB_ID*/,
+        rec.SEQ_ID,
+        rec.CREATION_DATE,
+        rec.ORGANIZATION_ID,
+     --   rec.ORGANIZATION_CODE,
+        rec.CENTER_ID,
+    --    rec.CENTER_NAME,
+        rec.ITEM_CAT2,
+        rec.ITEM_CAT2_DESC,
+        rec.BUD_YEAR,
+        rec.BUD_TYPE,
+        rec.DEMAND_NO,
+        rec.ITEM_NO,
+        rec.ITEM_DESC,
+        rec.UNIT_PRICE,
+        rec.QTY,
+        rec.AMT,      
+        rec.po_num,
+        rec.po_line_num,
+        rec.po_qty,
+        rec.po_price
+        from dual;
+        select count(*) into var_count1 from CUX_ITEM_BUD_FINAL_T
+        where id=rec.id
+        and demand_no=rec.demand_no
+        and item_no=rec.item_no;
+        
+        if var_count1>0 then        
+        for rec1 in final_new(rec.id,rec.demand_no,rec.item_no) loop
+        var_sub_id_final:=var_sub_id_final+1;
+        insert into CUX_ITEM_BUD_FINAL_T_NEW 
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        CENTER_ID,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        PO_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT,
+        DEMAND_NO,
+        d_unit_price,
+        d_qty)
+        select rec1.ID,
+        var_sub_id_final/*rec1.SUB_ID*/,
+        rec1.SEQ_ID,
+        rec1.CREATION_DATE,
+        rec1.ORGANIZATION_ID,
+        rec1.CENTER_ID,
+        rec1.ITEM_CAT2,
+        rec1.ITEM_CAT2_DESC,
+        rec1.BUD_YEAR,
+        rec1.BUD_TYPE,
+        rec1.PO_NO,
+        rec1.ITEM_NO,
+        rec1.ITEM_DESC,
+        rec1.UNIT_PRICE,
+        rec1.QTY,
+        rec1.AMT, 
+        rec1.DEMAND_NO,
+        rec1.d_unit_price,
+        rec1.d_qty 
+        from dual;
+        if var_sub_id_final>var_sub_id_usr then
+          insert into CUX_ITEM_BUD_usr_T_new
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+     --   ORGANIZATION_CODE,
+        CENTER_ID,
+    --    CENTER_NAME,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        DEMAND_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT)
+        select 
+        rec.ID,
+        var_sub_id_final/*var_sub_id_rsv*//*rec.SUB_ID*/,
+        rec.SEQ_ID,
+        rec.CREATION_DATE,
+        rec.ORGANIZATION_ID,
+   --     rec.ORGANIZATION_CODE,
+        rec.CENTER_ID,
+   --     rec.CENTER_NAME,
+        rec.ITEM_CAT2,
+        rec.ITEM_CAT2_DESC,
+        rec.BUD_YEAR,
+        rec.BUD_TYPE,
+        rec.DEMAND_NO,
+        rec.ITEM_NO,
+        rec.ITEM_DESC,
+        rec.UNIT_PRICE,
+        rec.QTY,
+        rec.AMT 
+        
+        from dual;
+        end if;
+       end loop;
+       else------
+       var_sub_id_final:=var_sub_id_final+1;
+       insert into CUX_ITEM_BUD_FINAL_T_NEW 
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        CENTER_ID,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        PO_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT, 
+        DEMAND_NO,
+        d_unit_price,
+        d_qty)
+        select rec.ID,
+        var_sub_id_final/*rec1.SUB_ID*/,
+        rec.SEQ_ID,
+        rec.CREATION_DATE,
+        rec.ORGANIZATION_ID,
+        rec.CENTER_ID,
+        rec.ITEM_CAT2,
+        rec.ITEM_CAT2_DESC,
+        rec.BUD_YEAR,
+        rec.BUD_TYPE,
+        null PO_NO,
+        null ITEM_NO,
+        null ITEM_DESC,
+        null UNIT_PRICE,
+        null QTY,
+        null AMT,
+        null DEMAND_NO,
+        null,
+        null
+        from dual;
+       end if;
+     end loop;
+    end loop;
+    commit;
+    for rec in rec_minus_group loop
+      var_count2:=0;
+      fnd_file.PUT_LINE(fnd_file.LOG, 'rec_minus_group:');
+      select nvl(max(sub_id),0)/*max(sub_id)*/ into var_count2 from CUX_ITEM_BUD_FINAL_T_NEW 
+      where id=rec.id
+      and seq_id=v_seq_id;
+      fnd_file.PUT_LINE(fnd_file.LOG, 'var_count2:'||var_count2);
+      fnd_file.PUT_LINE(fnd_file.LOG, 'rec.id:'||rec.id);
+      for rec1 in rec_minus(rec.id) loop
+      var_count2:=var_count2+1;
+      insert into CUX_ITEM_BUD_FINAL_T_NEW 
+        (ID,
+        SUB_ID,
+        SEQ_ID,
+        CREATION_DATE,
+        ORGANIZATION_ID,
+        CENTER_ID,
+        ITEM_CAT2,
+        ITEM_CAT2_DESC,
+        BUD_YEAR,
+        BUD_TYPE,
+        PO_NO,
+        ITEM_NO,
+        ITEM_DESC,
+        UNIT_PRICE,
+        QTY,
+        AMT, 
+        DEMAND_NO,
+        d_unit_price,
+        d_qty)
+        select rec1.ID,
+        /*rec1.SUB_ID+*/var_count2,
+        rec1.SEQ_ID,
+        rec1.CREATION_DATE,
+        rec1.ORGANIZATION_ID,
+        rec1.CENTER_ID,
+        rec1.ITEM_CAT2,
+        rec1.ITEM_CAT2_DESC,
+        rec1.BUD_YEAR,
+        rec1.BUD_TYPE,
+        rec1.PO_NO,
+        rec1.ITEM_NO,
+        rec1.ITEM_DESC,
+        rec1.UNIT_PRICE,
+        rec1.QTY,
+        rec1.AMT,
+       --null /*rec1.DEMAND_NO*/
+        rec1.DEMAND_NO,
+        rec1.d_unit_price,
+        rec1.d_qty 
+        from dual;
+      end loop;
+    end loop;
+   /* insert into CUX_ITEM_BUD_FINAL_T_NEW 
+    (select * from CUX_ITEM_BUD_FINAL_T
+    minus 
+    select * from CUX_ITEM_BUD_FINAL_T_new);*/
+    commit;
+   
+    fnd_file.PUT_LINE(fnd_file.LOG, '开始打印');
+    --输出文件头
+   /* CUX_COMMON_PKG.OUT_MSG('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+                                <html>
+                                <head>
+                                <meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+                                <title>' ||
+                           V_DOC_TITLE ||
+                           '</title>                                                                                   
+                            </head>');*/
+    CUX_COMMON_PKG.OUT_MSG('<html xmlns:x="urn:schemas-microsoft-com:office:excel"  encoding="UTF-8">
+                                <head>
+                                <title>' ||
+                           V_DOC_TITLE ||
+                           '</title>                                                                                   
+                            </head>');         
+                            
+                                           
+  
+  
+ /* 
+  CUX_COMMON_PKG.OUT_MSG('<html xmlns:x="urn:schemas-microsoft-com:office:excel  encoding="UTF-8"'>
+                                <head>
+                                <title>' ||
+                           V_DOC_TITLE ||
+                           '</title>                                                                                   
+                            </head>');   */
+  /*  CUX_COMMON_PKG.OUT_MSG('<?xml version="1.0" encoding="UTF-8"?>
+                                <head>
+                                <title>' ||
+                           V_DOC_TITLE ||
+                           '</title>                                                                                   
+                            </head>');  */ 
+    CUX_COMMON_PKG.OUT_MSG('<body>');
+    CUX_COMMON_PKG.OUT_MSG('<p>&nbsp;</p>
+                              <table width="100%" border="0" align="center">
+                                <tr> 
+                                  <td rowspan=1 colspan= 38 ><div align="center">
+                                      <font size="+2" face="宋体"><strong>' ||
+                                 V_DOC_TITLE ||
+                                 '</strong></font>
+                                           <p>&nbsp;</p>
+                                      </div></td>
+                                </tr>
+                              </table>');
+    V_COL_SPAN :=1; 
+                            
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '<tr>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '</tr>'); 
+    P_FONT_SIZE:=2; 
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '<table  CELLSPACING=0 BORDER=0> '); 
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '<tr>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1  colspan=38 ' || 
+                      ' align=left valign=middle ><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '                提交日期：' || to_char(sysdate,'yyyy-mm-dd')||'</b></font></td>');  
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '</tr>');     
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '<tr>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '</tr>'); 
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '</table>');                             
+    
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '<table  CELLSPACING=0 BORDER=1> ');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '<tr>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2  colspan= ' || V_COL_SPAN ||
+                      ' align=center valign=middle ><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '线路' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '中心/部门' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td  rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '二级分类' || '</b></font></td>');
+    /*FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '物资二级分类描述' || '</b></font></td>');*/
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '预算年度' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '预算类型' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '预算初始金额' || '</b></font></td>'); 
+
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan=2 ' ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '预算追加金额' || '</b></font></td>');
+                                   
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '预算最终金额' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '冻结金额' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '暂扣金额' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '实扣金额' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=2 colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '可用金额' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan=6 ' ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '冻结金额明细' || '</b></font></td>');
+    
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan=10 ' ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '暂扣金额明细' || '</b></font></td>');
+                                                                                                              
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan=9 ' ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '实扣金额明细' || '</b></font></td>');
+   
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '</tr>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '<tr>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '批次' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '金额' || '</b></font></td>');    
+                      --冻结明细
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '需求编号' || '</b></font></td>');  
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '物资编码' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '物资说明' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '单价' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '数量' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '金额' || '</b></font></td>');    
+                      --暂扣明细
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '需求编号' || '</b></font></td>');  
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '物资编码' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '物资说明' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '单价' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '数量' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '金额' || '</b></font></td>');  
+  
+     ----
+     FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '采购订单号' || '</b></font></td>');  
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '订单行号' || '</b></font></td>');  
+     FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '订单单价' || '</b></font></td>');  
+     FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '订单数量' || '</b></font></td>'); 
+                      
+     
+     ---                 
+                      --实扣明细
+       FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '需求编号' || '</b></font></td>');  
+     FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '需求单价' || '</b></font></td>');  
+     FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '需求数量' || '</b></font></td>'); 
+                                       
+                       
+     FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || 'PO编号' || '</b></font></td>');                                                         
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '物资编码' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '物资说明' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || 'PO单价' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || 'PO数量' || '</b></font></td>');
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td colspan= ' || V_COL_SPAN ||
+                      '  align=center><font size="' || P_FONT_SIZE ||
+                      '"><b>' || 'PO金额' || '</b></font></td>');  
+     FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '</tr>');  
+     
+     for rec_main in c_summary_temp loop
+        --取预算，冻结，暂扣，实扣 的明细记录个数  
+        select count(*) into i1 from CUX_ITEM_BUD_DETAIL_T t
+        where t.organization_id=rec_main.organization_id
+        and   t.CENTER_ID=rec_main.Center_Id
+        and   t.BUD_YEAR=rec_main.Bud_Year
+        and   t.BUD_TYPE=rec_main.Bud_Type
+        and   t.ITEM_CAT2=rec_main.Item_Cat2
+        and   t.id=rec_main.id
+    --    and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+        and   t.seq_id=v_seq_id;
+        
+        select count(*) into i2 from CUX_ITEM_BUD_RSV_T t
+        where t.organization_id=rec_main.organization_id
+        and   t.CENTER_ID=rec_main.Center_Id
+        and   t.BUD_YEAR=rec_main.Bud_Year
+        and   t.BUD_TYPE=rec_main.Bud_Type
+        and   t.ITEM_CAT2=rec_main.Item_Cat2
+        and   t.id=rec_main.id
+        and   t.seq_id=v_seq_id
+     --   and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+        ;
+        
+        select count(*) into i3 from CUX_ITEM_BUD_USR_T_new t
+        where t.organization_id=rec_main.organization_id
+        and   t.CENTER_ID=rec_main.Center_Id
+        and   t.BUD_YEAR=rec_main.Bud_Year
+        and   t.BUD_TYPE=rec_main.Bud_Type
+        and   t.ITEM_CAT2=rec_main.Item_Cat2
+        and   t.id=rec_main.id
+        and   t.seq_id=v_seq_id
+      --  and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+        ;
+        
+        select count(*) into i4 from CUX_ITEM_BUD_FINAL_T_new t
+        where t.organization_id=rec_main.organization_id
+        and   t.CENTER_ID=rec_main.Center_Id
+        and   t.BUD_YEAR=rec_main.Bud_Year
+        and   t.BUD_TYPE=rec_main.Bud_Type
+        and   t.ITEM_CAT2=rec_main.Item_Cat2
+        and   t.id=rec_main.id
+        and   t.seq_id=v_seq_id
+     --   and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+        ;
+        --i7 存放最大记录个数 作为合并的行数
+        if i1>i2 then
+           i5:=i1;
+        else
+           i5:=i2;
+        end if;   
+        
+        if i3>i4 then
+           i6:=i3;
+        else
+           i6:=i4;
+        end if;     
+        
+        if i5>i6 then
+           i7:=i5;
+        else
+           i7:=i6;
+        end if;   
+        
+        /*FND_FILE.PUT_LINE(FND_FILE.log, rec_main.Item_Cat2);  
+        FND_FILE.PUT_LINE(FND_FILE.log, rec_main.organization_name);  
+        FND_FILE.PUT_LINE(FND_FILE.log, rec_main.center_name);  
+        FND_FILE.PUT_LINE(FND_FILE.log, rec_main.bud_year);  
+        FND_FILE.PUT_LINE(FND_FILE.log, rec_main.bud_type);  */
+        
+        FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '<tr>');  
+        FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan='||i7||'  colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || rec_main.organization_name || '</b></font></td>');
+        FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || rec_main.center_name || '</b></font></td>');
+        FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td  rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || rec_main.item_cat2 || '</b></font></td>');
+      /*  FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || rec_main.item_cat2_desc|| '</b></font></td>');*/
+        FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || rec_main.bud_year|| '</b></font></td>');
+        FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' ||rec_main.bud_type || '</b></font></td>');
+        FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(rec_main.bud_first_amt,0)|| '</b></font></td>'); 
+       if i1>0 then--预算明细
+          begin
+          select distinct batch_time, bud_amt into v_batch_time, v_bud_amt from CUX_ITEM_BUD_DETAIL_T t
+          where t.organization_id=rec_main.organization_id
+          and   t.CENTER_ID=rec_main.Center_Id
+          and   t.BUD_YEAR=rec_main.Bud_Year
+          and   t.BUD_TYPE=rec_main.Bud_Type
+          and   t.ITEM_CAT2=rec_main.Item_Cat2
+          and   t.sub_id=1
+          and   t.seq_id=v_seq_id
+         -- and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+         ; 
+          exception when others then
+              fnd_file.PUT_LINE(fnd_file.LOG,'预算明细数据例外');
+          end;
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_batch_time,0)|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_bud_amt,0)|| '</b></font></td>');                  
+       else
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');   
+       end if;   
+     
+       FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td  rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' ||  nvl(rec_main.bud_end_amt,0) || '</b></font></td>');
+       FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' ||  nvl(rec_main.bud_rsv,0)|| '</b></font></td>');
+       FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl( rec_main.bud_usr,0)|| '</b></font></td>');
+       FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(rec_main.bud_final,0) || '</b></font></td>');
+       FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan='||i7||' colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(rec_main.bud_use,0)|| '</b></font></td>'); 
+      if i2>0 then--冻结
+          begin
+          select distinct demand_no, item_no||'''', item_desc, unit_price, qty, amt into 
+                 v_demand_no, v_item_no , v_item_desc, v_unit_price, v_qty, v_amt from CUX_ITEM_BUD_RSV_T t
+          where t.organization_id=rec_main.organization_id
+          and   t.CENTER_ID=rec_main.Center_Id
+          and   t.BUD_YEAR=rec_main.Bud_Year
+          and   t.BUD_TYPE=rec_main.Bud_Type
+          and   t.ITEM_CAT2=rec_main.Item_Cat2
+          and   t.sub_id=1
+          and   t.seq_id=v_seq_id
+        --  and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+          ; 
+          exception when others then
+              fnd_file.PUT_LINE(fnd_file.LOG,'冻结明细数据例外');
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.organization_id：'||rec_main.organization_id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Center_Id：'||rec_main.Center_Id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Item_Cat2：'||rec_main.Item_Cat2);              
+          end;
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_demand_no,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_no,'&nbsp;')|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_desc,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_unit_price,0)|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_qty,0)|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_amt,0)|| '</b></font></td>');                                                 
+      else
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');   
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');                               
+      end if;   
+      if i3>0 then--暂扣
+          begin
+          select distinct demand_no, item_no||'''', item_desc, unit_price, qty, amt into 
+                 v_demand_no, v_item_no , v_item_desc, v_unit_price, v_qty, v_amt from CUX_ITEM_BUD_USR_T_new t
+          where t.organization_id=rec_main.organization_id
+          and   t.CENTER_ID=rec_main.Center_Id
+          and   t.BUD_YEAR=rec_main.Bud_Year
+          and   t.BUD_TYPE=rec_main.Bud_Type
+          and   t.ITEM_CAT2=rec_main.Item_Cat2
+          and   t.sub_id=1
+          and   t.seq_id=v_seq_id
+         -- and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+          ; 
+          exception when others then
+              fnd_file.PUT_LINE(fnd_file.LOG,'暂扣明细数据例外');
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.organization_id：'||rec_main.organization_id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Center_Id：'||rec_main.Center_Id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Item_Cat2：'||rec_main.Item_Cat2);    
+          end;
+          
+            begin
+          select distinct po_num, po_line_num, po_qty, po_price into 
+                 var_po_num, var_po_line_num, var_po_qty, var_po_price from CUX_ITEM_BUD_USR_T_new t
+          where t.organization_id=rec_main.organization_id
+          and   t.CENTER_ID=rec_main.Center_Id
+          and   t.BUD_YEAR=rec_main.Bud_Year
+          and   t.BUD_TYPE=rec_main.Bud_Type
+          and   t.ITEM_CAT2=rec_main.Item_Cat2
+          and   t.sub_id=1
+          and   t.seq_id=v_seq_id
+         -- and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+          ; 
+          exception when others then
+              fnd_file.PUT_LINE(fnd_file.LOG,'暂扣PO明细数据例外');
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.organization_id：'||rec_main.organization_id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Center_Id：'||rec_main.Center_Id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Item_Cat2：'||rec_main.Item_Cat2);    
+          end;
+          
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_demand_no,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_no,'&nbsp;')|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_desc,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_unit_price,0)|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_qty,0)|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_amt,0)|| '</b></font></td>');  
+          --po
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_po_num,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_po_line_num,'&nbsp;')|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_po_price,0)|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_po_qty,0)|| '</b></font></td>');                                                                     
+       else
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');   
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');  
+          --po
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');    
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');                                                                              
+      end if;   
+      if i4>0 then--实扣
+          begin
+          select distinct po_no, item_no||'''', item_desc, unit_price, qty, amt ,demand_no,d_unit_price,d_qty 
+                 into 
+                 v_demand_no, v_item_no , v_item_desc, v_unit_price, v_qty, v_amt ,
+                 var_demand_code,var_unit_price,var_qty  from CUX_ITEM_BUD_FINAL_T_new t
+          where t.organization_id=rec_main.organization_id
+          and   t.CENTER_ID=rec_main.Center_Id
+          and   t.BUD_YEAR=rec_main.Bud_Year
+          and   t.BUD_TYPE=rec_main.Bud_Type
+          and   t.ITEM_CAT2=rec_main.Item_Cat2
+          and   t.sub_id=1
+          and   t.seq_id=v_seq_id
+         -- and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+          ; 
+          exception when others then
+              fnd_file.PUT_LINE(fnd_file.LOG,'实扣明细数据例外');
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.organization_id：'||rec_main.organization_id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Center_Id：'||rec_main.Center_Id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Item_Cat2：'||rec_main.Item_Cat2);    
+          end;
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_demand_code,'&nbsp;')|| '</b></font></td>'); 
+                      
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_unit_price,0)|| '</b></font></td>');              
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_qty,0)|| '</b></font></td>'); 
+                                  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_demand_no,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_no,'&nbsp;')|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_desc,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_unit_price,0)|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_qty,0)|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_amt,0)|| '</b></font></td>');                                                 
+      else
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');   
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');                               
+      end if;   
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '</tr>');        
+     --输出明细的第2行，第3行，第4行....  
+     j1:=1;          
+     while (j1<i7) loop
+       i1:=i1-1;
+       i2:=i2-1;
+       i3:=i3-1;
+       i4:=i4-1;
+     
+       j1:=j1+1; 
+       if i1>0 then--预算明细
+          begin
+          select distinct batch_time, bud_amt into v_batch_time, v_bud_amt from CUX_ITEM_BUD_DETAIL_T t
+          where t.organization_id=rec_main.organization_id
+          and   t.CENTER_ID=rec_main.Center_Id
+          and   t.BUD_YEAR=rec_main.Bud_Year
+          and   t.BUD_TYPE=rec_main.Bud_Type
+          and   t.ITEM_CAT2=rec_main.Item_Cat2
+          and   t.sub_id=j1
+          and   t.seq_id=v_seq_id
+         -- and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+          ; 
+           exception when others then
+              fnd_file.PUT_LINE(fnd_file.LOG,'预算明细数据例外2');
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.organization_id：'||rec_main.organization_id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Center_Id：'||rec_main.Center_Id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Item_Cat2：'||rec_main.Item_Cat2);    
+          end;
+        
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '<tr>');   
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_batch_time,0)|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_bud_amt,0)|| '</b></font></td>');                  
+       else
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');   
+       end if;   
+     
+       if i2>0 then--冻结
+          begin
+          select distinct demand_no, item_no||'''', item_desc, unit_price, qty, amt into 
+              v_demand_no, v_item_no , v_item_desc, v_unit_price, v_qty, v_amt from CUX_ITEM_BUD_RSV_T t
+          where t.organization_id=rec_main.organization_id
+          and   t.CENTER_ID=rec_main.Center_Id
+          and   t.BUD_YEAR=rec_main.Bud_Year
+          and   t.BUD_TYPE=rec_main.Bud_Type
+          and   t.ITEM_CAT2=rec_main.Item_Cat2
+          and   t.sub_id=j1
+          and   t.seq_id=v_seq_id
+         -- and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+          ; 
+          exception when others then
+              fnd_file.PUT_LINE(fnd_file.LOG,'冻结明细数据例外');
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.organization_id：'||rec_main.organization_id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Center_Id：'||rec_main.Center_Id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Item_Cat2：'||rec_main.Item_Cat2);    
+          end;
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_demand_no,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_no,'&nbsp;')|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_desc,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_unit_price,0)|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_qty,0)|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_amt,0)|| '</b></font></td>');                                                 
+       else
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');   
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');                               
+       end if;   
+       if i3>0 then--暂扣
+          begin
+          select distinct demand_no, item_no||'''', item_desc, unit_price, qty, amt into 
+                 v_demand_no, v_item_no , v_item_desc, v_unit_price, v_qty, v_amt from CUX_ITEM_BUD_USR_T_new t
+          where t.organization_id=rec_main.organization_id
+          and   t.CENTER_ID=rec_main.Center_Id
+          and   t.BUD_YEAR=rec_main.Bud_Year
+          and   t.BUD_TYPE=rec_main.Bud_Type
+          and   t.ITEM_CAT2=rec_main.Item_Cat2
+          and   t.sub_id=j1
+          and   t.seq_id=v_seq_id
+       --   and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+          ; 
+          exception when others then
+              fnd_file.PUT_LINE(fnd_file.LOG,'暂扣明细数据例外2');
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.organization_id：'||rec_main.organization_id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Center_Id：'||rec_main.Center_Id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Item_Cat2：'||rec_main.Item_Cat2);    
+          end;
+          
+           begin
+          select distinct po_num, po_line_num, po_qty, po_price into 
+                 var_po_num, var_po_line_num , var_po_qty, var_po_price from CUX_ITEM_BUD_USR_T_new t
+          where t.organization_id=rec_main.organization_id
+          and   t.CENTER_ID=rec_main.Center_Id
+          and   t.BUD_YEAR=rec_main.Bud_Year
+          and   t.BUD_TYPE=rec_main.Bud_Type
+          and   t.ITEM_CAT2=rec_main.Item_Cat2
+          and   t.sub_id=j1
+          and   t.seq_id=v_seq_id
+       --   and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+          ; 
+          exception when others then
+              fnd_file.PUT_LINE(fnd_file.LOG,'暂扣PO明细数据例外2');
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.organization_id：'||rec_main.organization_id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Center_Id：'||rec_main.Center_Id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Item_Cat2：'||rec_main.Item_Cat2);    
+          end;
+          
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_demand_no,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_no,'&nbsp;')|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_desc,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_unit_price,0)|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_qty,0)|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_amt,0)|| '</b></font></td>');  
+         --po
+         FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      '  align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_po_num,'&nbsp;')|| '</b></font></td>'); 
+       --   if var_po_line_num is not null then            
+             FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_po_line_num,'&nbsp;')|| '</b></font></td>');  
+         /* else
+             FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');      
+          end if;   */         
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_po_price,0)|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_po_qty,0)|| '</b></font></td>');                                                              
+       else
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');   
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');                                           
+       end if;   
+       if i4>0 then--实扣
+          begin
+          select distinct po_no,
+                          item_no || '''',
+                          item_desc,
+                          unit_price,
+                          qty,
+                          amt,
+                          sub_id,
+                          demand_no,
+                          d_unit_price,
+                          d_qty
+            into v_demand_no,
+                 v_item_no,
+                 v_item_desc,
+                 v_unit_price,
+                 v_qty,
+                 v_amt,
+                 j2,
+                 var_demand_code,
+                 var_unit_price,
+                 var_qty
+            from CUX_ITEM_BUD_FINAL_T_new t
+          where t.organization_id=rec_main.organization_id
+          and   t.CENTER_ID=rec_main.Center_Id
+          and   t.BUD_YEAR=rec_main.Bud_Year
+          and   t.BUD_TYPE=rec_main.Bud_Type
+          and   t.ITEM_CAT2=rec_main.Item_Cat2
+          and   t.sub_id=j1
+          and   t.seq_id=v_seq_id
+       --   and   nvl(t.ITEM_CAT2_desc,-999)=nvl(rec_main.Item_Cat2_desc,-999)
+          ; 
+          exception when others then
+              fnd_file.PUT_LINE(fnd_file.LOG,'实扣明细数据例外2');
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.organization_id：'||rec_main.organization_id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Center_Id：'||rec_main.Center_Id);
+              fnd_file.PUT_LINE(fnd_file.LOG,'rec_main.Item_Cat2：'||rec_main.Item_Cat2);    
+          end;
+        --  if v_demand_no='400000931' then
+            fnd_file.PUT_LINE(fnd_file.LOG,'v_demand_no:'||v_demand_no);
+            fnd_file.PUT_LINE(fnd_file.LOG,'v_demand_no:'||v_demand_no);
+            fnd_file.PUT_LINE(fnd_file.LOG,'v_item_no:'||v_item_no);
+            fnd_file.PUT_LINE(fnd_file.LOG,'v_item_desc:'||v_item_desc);
+            fnd_file.PUT_LINE(fnd_file.LOG,'v_unit_price:'||v_unit_price);
+            fnd_file.PUT_LINE(fnd_file.LOG,'v_qty:'||v_qty);
+            fnd_file.PUT_LINE(fnd_file.LOG,'v_amt:'||v_amt);
+            fnd_file.PUT_LINE(fnd_file.LOG,'sub_id:'||j2);
+        --  end if;  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_demand_code,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_unit_price,0)|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(var_qty,0)|| '</b></font></td>');              
+                      
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_demand_no,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_no,'&nbsp;')|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_item_desc,'&nbsp;')|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_unit_price,0)|| '</b></font></td>');  
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(v_qty,0)|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || nvl(/*j2*/v_amt,0)|| '</b></font></td>');                                                 
+       else
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');   
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>'); 
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT,
+                      '<td rowspan=1 colspan= ' || V_COL_SPAN ||
+                      ' align=left valign=top><font size="' || P_FONT_SIZE ||
+                      '"><b>' || '&nbsp;'|| '</b></font></td>');                               
+       end if;   
+          FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '</tr>');   
+      end loop;
+      FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '</tr>');  
+    end loop;               
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, '</table>');
+    CUX_COMMON_PKG.OUT_MSG('</body> </html> ');
+
+  EXCEPTION
+    WHEN OTHERS THEN
+      commit;
+      CUX_COMMON_PKG.OUT_MSG('错误：执行凭证输出时出现错误，错误信息为：' || SQLERRM);
+      CUX_COMMON_PKG.LOG_MSG('**************************************************************');
+  END;

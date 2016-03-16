@@ -1,0 +1,21 @@
+------------现有系统中用户职责和用户姓名关联查询
+select PA.organization,fu.user_id 用户ID, pf.last_name,fu.user_name 用户名称,
+       frv.responsibility_name 职责名称,fr.responsibility_key 职责关键字
+from fnd_responsibility fr, 
+fnd_user fu,
+fnd_user_resp_groups furg,
+PER_ALL_PEOPLE_F pf,
+fnd_responsibility_vl frv
+,PER_ALL_ASSIGNMENTS_D   PA
+where 
+     PA.assignment_number=PF.EMPLOYEE_NUMBER
+     and to_char(pa.effective_end_date,'yyyy-mm-dd')> to_char(sysdate, 'yyyy-mm-dd')
+    AND      fu.user_id = furg.user_id
+    and furg.responsibility_id = fr.responsibility_id
+    --and fr.responsibility_key like '%IBAS%'
+    --and frv.responsibility_name in ( '云南省本部库存杂品仓管员' ,'云南省本部库存超级用户','云南省本部库存仓管员')
+    --and frv.responsibility_name like '%库存%'
+    and frv.responsibility_id = fr.responsibility_id
+    and pf.person_id = fu.employee_id
+    --And fu.user_name='4689BIWENJUAN'
+order by PA.organization,fu.user_name;

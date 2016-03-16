@@ -1,0 +1,4 @@
+
+show parameter open_cursors;
+SELECT count(*) FROM V$OPEN_CURSOR;
+SELECT * FROM V$OPEN_CURSOR WHERE SQL_TEXT LIKE 'INSERT%';

@@ -1,0 +1,37 @@
+
+
+-- 读取存放上传文件数据的临时表, 如重复导入数据，需将之前数据清除
+SELECT rowid, cp.file_id,cp.* FROM CUX_PO_STATE_INTERFACE_T cp
+WHERE  TRIM(cp.CREATION_DATE) =  TRIM(SYSDATE) 
+and cp.attribute4<>'SZGY05MM202000173'
+;
+
+--select max(cp.file_id) FROM CUX_PO_STATE_INTERFACE_T cp
+
+
+-- 转PO数据的接口表
+-- 如出现迁移取消，错误，可将目标组织下的PO取消，并将本接口表的对应数据删除，之后重新迁移PO数据
+SELECT rowid,sc.*  FROM CUX_PO_ORDER_IFACE SC 
+WHERE  TRIM(SC.CREATION_DATE) =  TRIM(SYSDATE) 
+--where old_po_num in ('40200000539')
+--sc.attribute3 like '40200000539%'
+;
+-- 发放PO的头信息接口数据
+select * from CUX_PO_RELEASE_IFACE sc
+WHERE  TRIM(SC.CREATION_DATE) =  TRIM(SYSDATE)
+;
+
+-- 暂估入库
+SELECT * FROM RCV_TRANSACTIONS ST
+ WHERE TRIM(ST.CREATION_DATE) = TRIM(SYSDATE)
+ and st.transaction_type='DELIVER'
+ ;
+
+seleCT SUM(RT.QUANTITY * RT.PO_UNIT_PRICE)
+FROM RCV_TRANSACTIONS RT
+WHERE TRIM(RT.CREATION_DATE) = TRIM(SYSDATE)
+ and Rt.transaction_type='DELIVER'
+
+
+
+

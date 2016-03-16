@@ -1,0 +1,33 @@
+
+SELECT DISTINCT DEPT_ID FROM CUX_INV_DEMAND_HEADERS ORDER BY 1;
+SELECT DISTINCT SUB_DEPT_ID FROM CUX_INV_DEMAND_HEADERS ORDER BY 1;
+
+SELECT * FROM CUX_INV_DEMAND_HEADERS;
+
+SELECT * FROM CUX_INV_CENTERS_V;
+SELECT * FROM CUX_INV_DEPTS_V;
+SELECT * FROM CUX_INV_SUB_DEPTS_V;
+
+-- QUERY to get the org info who has not submit material application
+SELECT * FROM CUX_INV_DEPTS_V 
+WHERE FLEX_VALUE_ID NOT IN (SELECT DISTINCT DEPT_ID FROM CUX_INV_DEMAND_HEADERS)
+      AND FLEX_VALUE LIKE '01%';
+      
+SELECT DISTINCT FLEX_VALUE_ID FROM CUX_INV_sub_DEPTS_V where  FLEX_VALUE LIKE '01%';
+      
+SELECT * FROM CUX_INV_sub_DEPTS_V 
+WHERE FLEX_VALUE_ID NOT IN (SELECT DISTINCT sub_dept_id FROM CUX_INV_DEMAND_HEADERS)
+      AND FLEX_VALUE LIKE '01%';   
+      
+SELECT * FROM CUX_INV_sub_DEPTS_V 
+WHERE (FLEX_VALUE_ID) NOT IN (SELECT DISTINCT to_number(attribute12) from Mtl_Material_Transactions)
+      AND FLEX_VALUE LIKE '01%';  
+          
+
+-- attribute6 - dept, attribute12 - sub_dept      
+select distinct attribute6 from Mtl_Material_Transactions       ;
+SELECT distinct flex_value_id FROM CUX_INV_sub_DEPTS_V where FLEX_VALUE LIKE '01%';
+select distinct attribute12 from Mtl_Material_Transactions      ;
+
+
+
