@@ -36,11 +36,17 @@ SELECT TO_CHAR(C_WORKBEGINTIME,'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(C_WORKFINISHTIM
 FROM SCHEDUL.sdwo_iface S WHERE WONUM in ('3290444','3290442');
 
 -- SD582907
-select * from SCHEDUL.sdsr_iface where c_ticketid in ('SD582907','');
-select * from SCHEDUL.sdsrout_iface where c_ticketid in ('','SD582907') order by transid
+select * from SCHEDUL.sdsr_iface where c_ticketid in ('SD594311','SD592436');
+select * from SCHEDUL.sdsrout_iface where c_ticketid in ('SD592214'/*,'SD582907'*/) order by transid
+;
+
+select max(transseq) from SCHEDUL.sdsr_iface;
+select * from SCHEDUL.sdsr_iface 
+where c_findby is  null order by transseq
+;
 
 --select * from SCHEDUL.sdsrIN_iface where c_ticketid in ('','SD444370');
-select * from SCHEDUL.sdsrout_iface where c_ticketid in ('','SD444370'); -- SD446861
+select * from SCHEDUL.sdsrout_iface where c_ticketid in ('','SD517650'); -- SD446861
 
 --select distinct status from  maximo.SR
 

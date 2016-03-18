@@ -1,14 +1,41 @@
 
---select * from mtl_transaction_types order by 1 ;
+-- select * from mtl_transaction_types order by 1 ;
 
-SELECT * FROM MTL_MATERIAL_TRANSACTIONS M
+
+
+
+SELECT m.creation_date,m.transaction_date
+       ,m.*
+FROM MTL_MATERIAL_TRANSACTIONS M
 WHERE  1=1
        --M.TRANSACTION_ID IN (10562138 )
 --/*AND*/ M.Subinventory_Code='Z01HW01'
 --        and m.primary_quantity=-6
---        and m.inventory_item_id=38240
-        and m.transaction_type_id=36        -- 36 - 退货到供应商
-        and to_char(m.transaction_date,'yyyy-mm-dd') between '2015-10-01' and '2015-12-01'
+        and m.inventory_item_id= 226203
+        and m.transaction_type_id=123        -- 36 - 退货到供应商
+--        and to_char(m.transaction_date,'yyyy-mm-dd') between '2015-10-01' and '2015-12-01'
         and m.organization_id=102
 --ROWID = 'AAAdg8AANAAAP4RAAN'
 ;
+
+SELECT * 
+FROM MTL_MATERIAL_TRANSACTIONS M
+WHERE 1=1
+AND M.ATTRIBUTE4 IS  NULL
+AND m.transaction_type_id=123
+AND M.ORGANIZATION_ID=102
+ORDER BY M.TRANSACTION_DATE DESC
+;
+
+SELECT m.attribute4, m.* 
+FROM MTL_MATERIAL_TRANSACTIONS M
+WHERE M.TRANSACTION_ID IN (10823834,10892725)           
+order by TRANSACTION_ID
+--10823834  WO:3352983 TK201601210002  attribute4 10809721
+--10892725  WO:3777282  TK201603040001  attribute4 null
+
+-- 2629 WZBL01WZ,  -1 ANONYMOUS
+;
+
+SELECT * FROM FND_USER WHERE USER_ID IN (2629, -1,1112)
+;   
