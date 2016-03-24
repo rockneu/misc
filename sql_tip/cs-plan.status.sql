@@ -32,6 +32,12 @@ where workplanbegindt > '2015-04-30 06:00:00' and workplanenddt<'2016-05-01 06:0
 SELECT * FROM WC_WorkContent WHERE WORKCONTENTCODE='1C1-30-017'
 ;
 
+
+SELECT TOP 5 * FROM BD_WORKAREA
+;
+
+
+
 SELECT WC.WORKCONTENTCODE, wc.worksubject, PV.STATUS 计划状态, wp.Status 请销点状态, PV.workplanbegindt , PV.workplanenddt
 FROM PL_WorkPlanVersion PV,
 	WC_WorkContent WC

@@ -34,7 +34,7 @@ SELECT TRS.ITEM_CAT2,
                                              ITEM_CAT2) FINAL_AMOUNT --实扣金额                                   
         
           FROM CUX_INV_BUD_ITEM_CAT_V
-         WHERE ORGANIZATION_ID = 102         -- 102 LINE1, 1359 架大修，969 二号线303
+         WHERE ORGANIZATION_ID = 969         -- 102 LINE1, 1359 架大修，969 二号线303
            AND BUD_YEAR = '2016'
            AND EXISTS
          (SELECT 1
@@ -46,4 +46,5 @@ SELECT TRS.ITEM_CAT2,
            AND - 1 = -1
            AND (BUD_TYPE = '生产性')) TRS
  GROUP BY ITEM_CAT2, ITEM_CAT2_DESC, BUD_YEAR, BUD_TYPE, ORGANIZATION_ID
+ order by 1
 ;

@@ -630,7 +630,7 @@ ORDER BY ISSUEDATE DESC
 SELECT transaction_source_name, error_explanation, error_code, mti.* 
 FROM mtl_transactions_interface mti
 where /*error_explanation= '事务处理日期不能为将来日期' and*/
-  to_char(last_update_date, 'yyyy-mm-dd' ) like '2013-04%' ;
+  to_char(last_update_date, 'yyyy-mm-dd' ) like '2016-03%' ;
 --delete from mtl_transactions_interface where error_explanation='事务处理日期不能为将来日期' and transaction_source_name='WO:429224' and to_char(last_update_date,'yyyy-mm-dd' ) like '2013-04%' ;
 
 select distinct error_explanation ,transaction_date,last_update_date, i.*
@@ -645,7 +645,7 @@ where --error_explanation= '事务处理日期不能为将来日期' --and
 --  to_char(last_update_date, 'yyyy-mm-dd' ) like '2013-10%'
 --  AND SUBINVENTORY_CODE='L01KY05'  and 
         
- /*and*/ i.transaction_source_name in ('WO:2651478','WO:2651463')
+ /*and*/ i.transaction_source_name in ('WO:4163766','WO:4163767')
           AND M.INVENTORY_ITEM_ID=i.INVENTORY_ITEM_ID    
           and m.ORGANIZATION_ID=i.organization_id 
 order by i.last_update_date desc          ; 

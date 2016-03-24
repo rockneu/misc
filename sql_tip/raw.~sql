@@ -32,9 +32,9 @@ select * from cux_ehr_emp_inf where epk in ('201735'); -- employee_name in ('∑‚“
 select * from cux_hr_org_struc where org_code like '%YH%';
 
 SELECT * FROM CUX_HR_EMP_ASS 
-WHERE ORG_CODE LIKE '%YH%'
+--WHERE ORG_CODE LIKE '%YH%'
 WHERE  --EMPLOYEE_number like '410%' 
-employee_name in ('¡ıΩ®¿§');
+employee_name in ('’‘…⁄ª™');
 
 SELECT * FROM CUX_HR_EMP_DETAIL WHERE  /*p_EMPLOYEE_number='200622'; */ P_LAST_name='”⁄–Ò' ; --’≈∫Í
 --('Õı¡¡','≤‹∫£∑Â','Õı—«Œ∞');

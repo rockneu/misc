@@ -36,8 +36,8 @@ SELECT b.Segment1 物料编码,
       
    and o.Subinventory_Code = Ms.Secondary_Inventory_Name
 
-         AND d.Attribute1 = 2 ---1为一级库， 2为二级库
-         AND o.Subinventory_Code = 'L02CL01'
+         AND d.Attribute1 = 1 ---1为一级库， 2为二级库
+         AND o.Subinventory_Code = 'Z01QX02'
       --   AND o.Subinventory_Code <> 'FZH0001'
       -- 1-供电机电-机电车间通风空调工班         L01GJ06
       -- 1-供电机电-机电车间给排水工班          L01GJ09

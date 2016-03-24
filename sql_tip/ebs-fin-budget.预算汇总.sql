@@ -1,16 +1,18 @@
 
 
-SELECT TRS.ITEM_CAT2,
-       TRS.ITEM_CAT2_DESC,
-       TRS.BUD_YEAR,
-       TRS.BUD_TYPE,
+SELECT 
        TRS.ORGANIZATION_ID,
-       SUM(NVL(TRS.BUD_AMOUNT, 0)), --预算金额
-       SUM(NVL(TRS.RSV_AMOUNT, 0)), --冻结金额 
-       SUM(NVL(TRS.USE_AMOUNT, 0)), --暂扣金额 
-       SUM(NVL(TRS.FINAL_AMOUNT, 0)), --实扣金额 
+       TRS.BUD_YEAR,
+--       TRS.BUD_TYPE,
+       TRS.ITEM_CAT2,
+       TRS.ITEM_CAT2_DESC,
+
+       SUM(NVL(TRS.BUD_AMOUNT, 0)) 预算, --预算金额
+       SUM(NVL(TRS.RSV_AMOUNT, 0)) 冻结, --冻结金额 
+       SUM(NVL(TRS.USE_AMOUNT, 0)) 暂扣, --暂扣金额 
+       SUM(NVL(TRS.FINAL_AMOUNT, 0)) 实扣, --实扣金额 
        SUM(NVL(TRS.BUD_AMOUNT, 0) - NVL(TRS.RSV_AMOUNT, 0) -
-           NVL(TRS.USE_AMOUNT, 0) - NVL(TRS.FINAL_AMOUNT, 0)) ---可用金额
+           NVL(TRS.USE_AMOUNT, 0) - NVL(TRS.FINAL_AMOUNT, 0)) 可用 ---可用金额
   FROM (SELECT ITEM_CAT2,
                ITEM_CAT2_DESC,
                BUD_YEAR,
