@@ -37,7 +37,7 @@ SELECT b.Segment1 物料编码,
    and o.Subinventory_Code = Ms.Secondary_Inventory_Name
 
          AND d.Attribute1 = 1 ---1为一级库， 2为二级库
-         AND o.Subinventory_Code = 'Z02YDC04'
+         AND o.Subinventory_Code = 'Z02DC01'
       --   AND o.Subinventory_Code <> 'FZH0001'
       -- 1-供电机电-机电车间通风空调工班         L01GJ06
       -- 1-供电机电-机电车间给排水工班          L01GJ09
@@ -50,7 +50,7 @@ SELECT b.Segment1 物料编码,
       
 --      and b.segment1 in ('010083110001', '') --='300030250001'
 --      and  ms.secondary_inventory_name='L01GJ06'
-         AND d.Organization_Id = 1358 -- 102 for 301, line1 , 1558 for 326,301-line2, 969 FOR 303, 1358 FOR 352
+         AND d.Organization_Id = 1618 -- 102 for 301, line1 , 1558 for 326,301-line2, 969 FOR 303, 1358 FOR 352, 1618 for 326
       and ms.organization_id=d.organization_id
       and c.organization_id=d.organization_id
 

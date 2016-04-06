@@ -7,10 +7,15 @@
 
 
 
-SELECT TO_CHAR(C_WORKBEGINTIME,'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(C_WORKFINISHTIME,'YYYY-MM-DD HH24:MI:SS'),
+SELECT s.reportdate,s.targstartdate, s.c_workcontentcode, s.c_statuscode
+         ,TO_CHAR(C_WORKBEGINTIME,'YYYY-MM-DD HH24:MI:SS'), TO_CHAR(C_WORKFINISHTIME,'YYYY-MM-DD HH24:MI:SS'),
+       s.c_sdsupervisor,
         S.* 
-FROM  SCHEDUL.sdwo_iface S WHERE WONUM in ('4205586','3477938')
-order by s.wonum
+FROM  SCHEDUL.sdwo_iface S 
+WHERE 1=1 
+--      and WONUM in ('4158360','')
+      and s.c_sdsupervisor='+'
+order by 2 -- s.wonum
 ;
 
 
