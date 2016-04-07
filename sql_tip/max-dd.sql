@@ -54,7 +54,10 @@ where c_findby is  null order by transseq
 ;
 
 --select * from SCHEDUL.sdsrIN_iface where c_ticketid in ('','SD444370');
-select * from SCHEDUL.sdsrout_iface where c_ticketid in ('','SD517650'); -- SD446861
+select * from SCHEDUL.sdsrout_iface where c_ticketid in ('SD684141','SD684159')
+order by c_ticketid, transid; -- SD446861
+
+select * from SCHEDUL.sdsrout_iface where c_ticketid is null
 
 --select distinct status from  maximo.SR
 
