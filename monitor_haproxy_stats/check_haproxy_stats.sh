@@ -5,6 +5,7 @@
 # Precondition
 # 1) need socat to be installed at the haproxy server to be monitored
 # 2) need to configure socket at haproxy.cfg, default at /var/run/haproxy.sock
+# 3) need to grant "sudo /usr/local/bin/socat" privilege to the user who runs nrpe service, if this script is invoked by nrpe service.
 #
 #
 # Usage:
@@ -16,8 +17,11 @@
 #
 # Author: Rock Liu 20160409
 #
-# Updating history
-#	optimize rate related metric(like rate_in,rate_out ) calculation method. Instead of using total_byte / total_time, now try using interval_byte / interval_time.
+# Updating history:
+#
+#	1. 20160416  optimize rate related metric(like rate_in,rate_out ) calculation method. Instead of using total_byte / total_time, now try using interval_byte / interval_time.
+#	
+#	2. 20160418	 remove unit mbps as the return value(mail service) flaps among xx kbps and xxxx kbps
 #
 
 
@@ -61,8 +65,10 @@ response_out="0"
 
 # get haproxy stats info and dump to local file
 dump_info() {
-	#/bin/echo "show info;show stat" | /usr/local/bin/socat unix-connect:/var/run/haproxy.sock stdio > /tmp/ha_stat.txt
-	/bin/echo "show info;show stat" | /usr/local/bin/socat unix-connect:$stat_file stdio > $temp_file
+	#/bin/echo "show info;show stat" | sudo /usr/local/bin/socat unix-connect:/var/run/haproxy.sock stdio > /tmp/ha_stat.txt
+	/bin/echo "show info;show stat" | sudo /usr/local/bin/socat unix-connect:$stat_file stdio > $temp_file 
+
+	#echo `id` > /tmp/nrpe3.txt
 	
 }
 
@@ -78,25 +84,24 @@ check_input() {
 		return 2
 	fi
 	
-	# check service name. to check whether the name can be found from the list
-
 	ptype=`echo $ptype | tr a-z A-Z`
 	
+	#echo "cat $temp_file ..."
+	#content=`cat $temp_file`
+	#echo "content = $content"
 	list=` cat $temp_file | awk -F, /"$ptype"/ | awk -F, '{print $1}'`
 	exist=$(echo $list | grep $pname)
 	if [ "$exist" != "" ];then
 		return 1
 	else
-		echo "Parameter server_name invalid!"
+		#cat $temp_file
+		echo "maybe input parameter invalid! list=$list ptype=$ptype pname=$pname"
 		return 2
 	fi
 }
 
-
 extract_data() {
 
-#	cat $temp_file | awk -F: '/app-sso/' | awk -F: '/BACKEND/'
-#	time_up=`cat $temp_file | awk -F, '{print $24}'`
 #	/bin/echo "show stat" | /usr/bin/nc -U  /var/run/haproxy.sock | awk -F, '{print $24}'
 	
 	if [ "$ptype" == "FRONTEND" ]; then
@@ -106,17 +111,14 @@ extract_data() {
 		byte_in=`cat $temp_file | awk -F, /"$pname"/ | awk -F, '{print $9}'`
 		byte_out=`cat $temp_file | awk -F, /"$pname"/ | awk -F, '{print $10}'`
 		request_in=`cat $temp_file | awk -F, /"$pname"/ | awk -F, '{print $49}'`
-
 		#echo "$status $time_up $cur_session $byte_in $byte_out $request_in"
-
 	elif [ "$ptype" == "BACKEND" ]; then
 		status=`cat $temp_file | awk -F, /"$pname"/ | awk -F, /"BACKEND"/ | awk -F, '{print $18}'`
 		cur_session=`cat $temp_file | awk -F, /"$pname"/ | awk -F, /"BACKEND"/ | awk -F, '{print $5}'`
-		time_up=`cat $temp_file | awk -F: /"$pname"/ | awk -F, /"BACKEND"/ | awk -F: '{print $24}'`
+		time_up=`cat $temp_file | awk -F: /"$pname"/ | awk -F, /"BACKEND"/ | awk -F, '{print $24}'`
 		byte_in=`cat $temp_file | awk -F, /"$pname"/ | awk -F, /"BACKEND"/ | awk -F, '{print $9}'`
 		byte_out=`cat $temp_file | awk -F, /"$pname"/ | awk -F, /"BACKEND"/ | awk -F, '{print $10}'`
 		response_out=`cat $temp_file | awk -F, /"$pname"/ | awk -F, /"BACKEND"/ | awk -F, '{print $8}'`
-		
 		#echo "$status $time_up $cur_session $byte_in $byte_out $response_out"
 	else
 		echo "not in if branch"
@@ -146,18 +148,18 @@ judge() {
 		# to avoid 0/0
 		timelast_up=`expr $time_up - 1`
 	fi
-		
 	
 	if [ $status = "OPEN" ] || [ $status = "UP" ]; then
 		msg="HAProxy Service OK: "
 	else
-		msg="haproxy Server Critical:"
+		msg="HAProxy Service Critical:"
 	fi
 
 	# write current metric data to file for next calculation
 	if [ "$ptype" == "FRONTEND" ]; then
 		echo "$byte_in,$byte_out, $request_in, $time_up" > "$temp_dir$ptype$pname.txt"
 	elif [ "$ptype" == "BACKEND" ]; then
+		#echo "$byte_in,$byte_out, $response_out,$time_up"
 		echo "$byte_in,$byte_out, $response_out,$time_up" > "$temp_dir$ptype$pname.txt"
 	fi
 
@@ -184,26 +186,18 @@ judge() {
 	if [ "$rate_in" -lt "1024" ];then
 		unit="bps"
 		rate_in="$rate_in$unit"
-	elif [ "$rate_in" -lt "1024000" ];then
+	else
 		unit="kbps"
 		rate_in=`echo "$rate_in / 1024" | bc`
-		rate_in="$rate_in$unit"
-	else
-		unit="mbps"
-		rate_in=`echo "$rate_in / 1024000" | bc`
 		rate_in="$rate_in$unit"
 	fi
 
 	if [ "$rate_out" -lt "1024" ];then
 		unit="bps"
 		rate_out="$rate_out$unit"
-	elif [ "$rate_out" -lt "1024000" ];then
+	else
 		unit="kbps"
 		rate_out=`echo "$rate_out / 1024" | bc`
-		rate_out="$rate_out$unit"
-	else
-		unit="mbps"
-		rate_out=`echo "$rate_out / 1024000" | bc`
 		rate_out="$rate_out$unit"
 	fi
 
