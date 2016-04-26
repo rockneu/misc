@@ -30,8 +30,9 @@ pname="$2"
 pct="$#"
 
 temp_dir="/tmp/"
-temp_file='/tmp/ha_stat.txt'
+temp_file="/tmp/ha_stat_$1_$2.txt"
 stat_file='/var/run/haproxy.sock'
+debug_file="/tmp/debug.cs.txt"
 
 #msg
 msg=""
@@ -66,7 +67,8 @@ response_out="0"
 # get haproxy stats info and dump to local file
 dump_info() {
 	#/bin/echo "show info;show stat" | sudo /usr/local/bin/socat unix-connect:/var/run/haproxy.sock stdio > /tmp/ha_stat.txt
-	/bin/echo "show info;show stat" | sudo /usr/local/bin/socat unix-connect:$stat_file stdio > $temp_file 
+	#/bin/echo "show info;show stat" | sudo /usr/local/bin/socat unix-connect:$stat_file stdio | grep $pname > $temp_file 
+	/bin/echo "show info;show stat" | sudo /usr/local/bin/socat unix-connect:$stat_file stdio  > $temp_file 
 
 	#echo `id` > /tmp/nrpe3.txt
 	
@@ -155,13 +157,22 @@ judge() {
 		msg="HAProxy Service Critical:"
 	fi
 
+
 	# write current metric data to file for next calculation
 	if [ "$ptype" == "FRONTEND" ]; then
 		echo "$byte_in,$byte_out, $request_in, $time_up" > "$temp_dir$ptype$pname.txt"
 	elif [ "$ptype" == "BACKEND" ]; then
-		#echo "$byte_in,$byte_out, $response_out,$time_up"
+		#echo "last value read from: $temp_dir$ptype$pname.txt">>$debug_file
+
+		#echo "bin=$byte_in,bout=$byte_out, rsp=$response_out,time=$time_up"
 		echo "$byte_in,$byte_out, $response_out,$time_up" > "$temp_dir$ptype$pname.txt"
+		#echo "this value write to: $temp_dir$ptype$pname.txt">>$debug_file
 	fi
+
+	#if [ "$ptype" == "BACKEND" ]; then
+		#echo "Before last value: timelast=$timelast_up bylast_in=$bytelast_in bylast_out=$bytelast_out">>/tmp/debug.cs.txt	
+		#echo "After this value: time=$time_up by_in=$byte_in by_out=$byte_out">>/tmp/debug.cs.txt
+	#fi
 
 	byte_in=`expr $byte_in - $bytelast_in`
 	byte_out=`expr $byte_out - $bytelast_out`
@@ -169,8 +180,9 @@ judge() {
 	request_in=`expr $request_in - $reqresplast_inout`
 	response_out=`expr $response_out - $reqresplast_inout`
 
-	#echo "after reduction: time=$time_up byte_in=$byte_in byte_out=$byte_out request=$request_in response=$response_out"
-	
+	if [ "$ptype" == "BACKEND" ]; then
+	#	echo "after reduction: time=$time_up byte_in=$byte_in byte_out=$byte_out request=$request_in response=$response_out" >> /tmp/debug.cs.txt
+	fi
 	
 	rate_in=`echo "$byte_in / $time_up" | bc`
 	rate_out=`echo "$byte_out / $time_up" | bc`
@@ -205,6 +217,10 @@ judge() {
 		msg="$msg status=$status  | current_session.conn=$cur_session rate_byte_in=$rate_in rate_byte_out=$rate_out rate_request=$rate_req"
 	elif [ "$ptype" == "BACKEND" ];then
 		msg="$msg status=$status  | current_session.conn=$cur_session rate_byte_in=$rate_in rate_byte_out=$rate_out rate_response=$rate_rsp"
+		#echo "$msg">>/tmp/debug.cs.txt
+		#echo `date -u`>>$debug_file
+		#echo "============================">>/tmp/debug.cs.txt
+		#echo "============================">>/tmp/debug.cs.txt
 	fi
 	
 	echo $msg
