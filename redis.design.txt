@@ -1,0 +1,7 @@
+
+for cs service
+
+1) data with state 'completed' get stored within redis server, then much data loading during redis restart will be avoided.
+-- need more considerations
+
+2) set different expirations for different users'/positions' to-do list.
